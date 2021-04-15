@@ -1,19 +1,4 @@
-import pandas
-import sqlite3 
-from sqlite3 import Error
 
-
-
-# create a connection to the SQLite Database
-# @param {Pathname} db_file: The filename to connect to or create.
-# @return {SQLite3 Connection Object} conn: the database connection.
-def create_connection(db_file):
-    conn = None
-    try:
-        conn = sqlite3.connect(db_file)
-        return conn
-    except Error as e:
-        print(e)
 
 # create a table from the create_table_sql statement
 # @param {SQLite3 Connection Object} conn: The database to create tables in.
@@ -26,16 +11,16 @@ def create_table(conn, create_table_sql):
     except Error as e:
         print(e)
 
-def main():
-    DB_Pathname = r".\SQLite_bookstore.db"
-    conn = create_connection(DB_Pathname)
+def generate_all_tables(conn):
     if conn is None:
         print("Error! cannot create the database connection.")
     else:
         # Users
         sql_create_users_table =  """ CREATE TABLE IF NOT EXISTS Users ( 
             id INTEGER PRIMARY KEY,
-            password BLOB NOT NULL,
+            password BLOB,
+            username TEXT NOT NULL UNIQUE,
+            email TEXT NOT NULL UNIQUE,
             role TEXT CHECK (role IN ('manager', 'employee', 'default')) NOT NULL DEFAULT 'default'
         );"""
         create_table(conn, sql_create_users_table)
@@ -48,25 +33,12 @@ def main():
         );
         """
         create_table(conn, sql_create_trusts_table)
-        sql_create_emails_table = """ CREATE TABLE IF NOT EXISTS Emails (
-            user_id INTEGER,
-            email TEXT NOT NULL UNIQUE,
-            FOREIGN KEY (user_id) REFERENCES Users(id)
-        );
-        """
-        create_table(conn, sql_create_emails_table)
-        sql_create_userames_table = """ CREATE TABLE IF NOT EXISTS Usernames (
-            user_id INTEGER,
-            username TEXT NOT NULL UNIQUE,
-            FOREIGN KEY (user_id) REFERENCES Users(id)
-        );
-        """
-        create_table(conn, sql_create_userames_table)
+        
         sql_create_customers_table = """ CREATE TABLE IF NOT EXISTS Customers (
             user_id INTEGER,
             phone INTEGER NOT NULL,
-            lastname TEXT NOT NULL,
-            firstname TEXT NOT NULL,
+            last_name TEXT NOT NULL,
+            first_name TEXT NOT NULL,
             FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
         );
         """
@@ -81,7 +53,7 @@ def main():
             num_pages INTEGER NOT NULL,
             pub_date INTEGER NOT NULL,
             publisher TEXT NOT NULL,
-            timestamp INTEGER NOT NULL,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
             price NUMBER NOT NULL,
             stock INTEGER NOT NULL,
             CHECK (price >= 0 AND num_pages >= 0)
@@ -169,7 +141,7 @@ def main():
             id INTEGER PRIMARY KEY,
             content TEXT,
             score INTEGER NOT NULL CHECK (score >= 0 and score <= 10),
-            timestamp INTEGER NOT NULL,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
             book_id INTEGER,
             user_id INTEGER,
             FOREIGN KEY (book_id) REFERENCES Books(id) ON DELETE CASCADE,
@@ -181,7 +153,7 @@ def main():
         (
             comment_id INTEGER,
             value INTEGER NOT NULL CHECK (value >= 0 AND value <= 2),
-            timestamp INTEGER NOT NULL,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (comment_id) REFERENCES Comments(id) ON DELETE CASCADE
         );
         """
@@ -195,7 +167,7 @@ def main():
             apt_number INTEGER,
             city TEXT NOT NULL,
             zip_code INTEGER,
-            region TEXT NOT NULL,
+            region TEXT,
             country TEXT NOT NULL,
             user_id INTEGER,
             FOREIGN KEY (user_id) REFERENCES Customers(id) ON DELETE NO ACTION
@@ -205,9 +177,9 @@ def main():
         sql_create_orders_table = """ CREATE TABLE IF NOT EXISTS Orders
         (
             id INTEGER PRIMARY KEY,
-            timestamp INTEGER NOT NULL,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
             order_quarter INTEGER,
-            time_fulfilled INTEGER DEFAULT NULL,
+            time_fulfilled DATETIME DEFAULT NULL,
             ships_to INTEGER,
             placed_by INTEGER,
             FOREIGN KEY (ships_to) REFERENCES Addresses(id)
@@ -246,11 +218,3 @@ def main():
             FOREIGN KEY (coupon_id) REFERENCES Coupons(coupon_id)
         );
         """
-
-    book_data = pandas.read_csv(r".\books_modified.csv")
-    book_data_frame = pandas.DataFrame(book_data, columns = ['title', 'authors', 'average_rating','isbn', 'isbn13', 'language_code', 'num_pages', 'ratings_count', 'text_reviews_count', 'publication_date', 'publisher'])
-    print(book_data_frame.loc[book_data_frame['title']])
-    
-
-if __name__ == '__main__':
-    main()
