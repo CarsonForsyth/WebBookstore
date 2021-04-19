@@ -1,4 +1,4 @@
-
+from sqlite3 import Error
 
 # create a table from the create_table_sql statement
 # @param {SQLite3 Connection Object} conn: The database to create tables in.
@@ -67,7 +67,7 @@ def generate_all_tables(conn):
         );
         """
         create_table(conn, sql_create_authors_table)
-        sql_create_authorWrites_table = """ CREATE TABLE IF NOT EXISTS authorWrites (
+        sql_create_authorWrites_table = """ CREATE TABLE IF NOT EXISTS AuthorWrites (
             author_id INTEGER,
             book_id INTEGER,
             FOREIGN KEY (author_id) REFERENCES Authors(id) ON DELETE CASCADE,
@@ -218,3 +218,43 @@ def generate_all_tables(conn):
             FOREIGN KEY (coupon_id) REFERENCES Coupons(coupon_id)
         );
         """
+        create_table(conn, sql_create_couponDiscounts_table)
+
+        # VIEWS
+        sql_create_bookStats_view = """ CREATE VIEW IF NOT EXISTS BookStats AS SELECT * FROM 
+            (
+            SELECT Books.isbn13 AS isbn, SUM(quantity) AS copies_sold, publisher, order_quarter FROM Books INNER JOIN OrderItems INNER JOIN Orders GROUP BY Books.isbn13
+            );
+        """
+        create_table(conn, sql_create_bookStats_view)
+
+        sql_create_commentRating_view = """ CREATE VIEW IF NOT EXISTS CommentRating AS SELECT * FROM 
+            (
+            SELECT user_id, Comments.comment_id, AVG(value) AS avg_rating FROM Comments INNER JOIN Ratings GROUP BY user_id
+            );
+        """
+        create_table(conn, sql_create_commentRating_view)
+
+        sql_create_userStats_view = """ CREATE VIEW IF NOT EXISTS UserStats AS SELECT * FROM 
+            (  
+            (SELECT Users.user_id, SUM(Trusts.value) AS trust_rating 
+            FROM Users INNER JOIN Trusts)
+            INNER JOIN
+            (SELECT CommentRating.user_id, AVG(avg_rating) AS usefulness 
+            FROM CommentRating GROUP BY CommentRating.user_id)
+            );
+        """
+        create_table(conn, sql_create_userStats_view)
+
+        sql_create_addressOrderStats_view = """ CREATE VIEW IF NOT EXISTS AddressOrderStats AS SELECT * FROM (
+            SELECT city, region, country, quarter, SUM(total) AS order_total FROM
+            (
+                SELECT order_id, address_id, quantity*SUM(price) AS total 
+                FROM Orders INNER JOIN OrderItems 
+                GROUP BY order_id
+            ) 
+            INNER JOIN Addresses
+            );
+        """
+        create_table(conn, sql_create_addressOrderStats_view)
+        

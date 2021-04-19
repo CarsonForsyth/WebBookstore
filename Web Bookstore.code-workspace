@@ -3,5 +3,8 @@
 		{
 			"path": "."
 		}
-	]
+	],
+	"settings": {
+		"python.pythonPath": "C:\\Users\\4syth\\AppData\\Local\\Programs\\Python\\Python39\\python.exe"
+	}
 }
