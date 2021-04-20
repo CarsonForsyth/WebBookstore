@@ -13,20 +13,23 @@ def populate(conn):
     reduced_book_df['stock'] = random_stocks
     reduced_book_df.to_sql('Books', conn, if_exists='append',index=False)
     # Authors
-    authors_df = pandas.DataFrame()
+    authors_df = pandas.DataFrame(columns=['id', 'name'])
     authorWrites_df = pandas.DataFrame()
     num_authors = 0
     for book in book_data_frame.itertuples():
         authors = book.authors.split('/')
         for author in authors:
-            authot_id = 0
-            if author not in authors_df.name:
-                authors_df = authors_df.append({'id': num_authors, 'name': author}, ignore_index=True)
+            author_id = 0
+            if author in authors_df.values:
+                author_id = authors_df.loc[authors_df['name'] == author]['id']
+            else:
+                authors_df = authors_df.append({'id': int(num_authors), 'name': str(author)}, ignore_index=True)
                 num_authors += 1
                 author_id = num_authors
-            else:
-                author_id = authors_df.loc[authors_df['name'] == author]
-            authorWrites_df = authorWrites_df.append({'author_id': author_id, 'book_id': book.id})
+            authorWrites_df = authorWrites_df.append({'author_id': int(author_id), 'book_id': int(book.bookID)}, ignore_index=True)
+            print(authorWrites_df)
+    authors_df.to_sql('Authors', conn, if_exists='append',index=False)
+    authorWrites_df.to_sql('AuthorWrites', conn, if_exists='append',index=False)
 
     # Populate Users, Customers, Addresses
     user_data = pandas.read_csv(r".\..\mock_users.csv")
@@ -50,7 +53,6 @@ def populate(conn):
             order_quarter = 0
             #order = numpy.array([num_orders, order_quarter, user[0], user[0]], dtype=object)
             order = {'id': num_orders, 'order_quarter': order_quarter, 'ships_to': user.id, 'placed_by': user.id}
-            print(order)
             while True:
                 num_items += 1
                 random_book_id = numpy.random.randint(1, num_books)
@@ -61,7 +63,6 @@ def populate(conn):
                 if numpy.random.random() > .5:
                     break
             orders_df = orders_df.append(order, ignore_index=True)
-    print(orders_df)
     orders_df.to_sql('Orders', conn, if_exists='append',index=False)
     items_df.to_sql('OrderItems', conn, if_exists='append',index=False)
 
