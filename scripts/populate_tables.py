@@ -12,6 +12,21 @@ def populate(conn):
     random_stocks = numpy.random.randint(0, 40, num_books)
     reduced_book_df['stock'] = random_stocks
     reduced_book_df.to_sql('Books', conn, if_exists='append',index=False)
+    # Authors
+    authors_df = pandas.DataFrame()
+    authorWrites_df = pandas.DataFrame()
+    num_authors = 0
+    for book in book_data_frame.itertuples():
+        authors = book.authors.split('/')
+        for author in authors:
+            authot_id = 0
+            if author not in authors_df.name:
+                authors_df = authors_df.append({'id': num_authors, 'name': author}, ignore_index=True)
+                num_authors += 1
+                author_id = num_authors
+            else:
+                author_id = authors_df.loc[authors_df['name'] == author]
+            authorWrites_df = authorWrites_df.append({'author_id': author_id, 'book_id': book.id})
 
     # Populate Users, Customers, Addresses
     user_data = pandas.read_csv(r".\..\mock_users.csv")
@@ -26,23 +41,28 @@ def populate(conn):
 
     # Populate Orders
     num_orders = 0
+    num_items = 0
     orders_df = pandas.DataFrame()
     items_df = pandas.DataFrame()
-    for user in user_df:
-        while numpy.random.random() > .5:
+    for user in user_df.itertuples():
+        while numpy.random.random() > .9:
             num_orders += 1
             order_quarter = 0
-            order = numpy.array([num_orders, order_quarter, user['id'], user['id']], dtype=object)
-            num_items = 0
+            #order = numpy.array([num_orders, order_quarter, user[0], user[0]], dtype=object)
+            order = {'id': num_orders, 'order_quarter': order_quarter, 'ships_to': user.id, 'placed_by': user.id}
+            print(order)
             while True:
                 num_items += 1
                 random_book_id = numpy.random.randint(1, num_books)
-                item = numpy.array([num_items, reduced_book_df.iloc[random_book_id]['price'], quantity, random_book_id, num_orders], dtype=object)
+                quantity = numpy.random.randint(1, 6)
+                #item = numpy.array([num_items, reduced_book_df.iloc[random_book_id]['price'], quantity, random_book_id, num_orders], dtype=object)
+                item = {'id': num_items, 'price': reduced_book_df.iloc[random_book_id]['price'], 'quantity': quantity, 'book_id': random_book_id, 'order_id': num_orders}
+                items_df = items_df.append(item, ignore_index=True)
                 if numpy.random.random() > .5:
                     break
-                items_df.insert(item, columns=['id', 'price', 'quantity', 'book_id', 'order_id'])
-            orders_df.insert(order, columns=['id', 'order_quarter', 'ships_to', 'placed_by'])
-        orders_df.to_sql('Orders', conn, if_exists='append',index=False)
-        items_df.to_sql('OrderItems', conn, if_exists='append',index=False)
+            orders_df = orders_df.append(order, ignore_index=True)
+    print(orders_df)
+    orders_df.to_sql('Orders', conn, if_exists='append',index=False)
+    items_df.to_sql('OrderItems', conn, if_exists='append',index=False)
 
     

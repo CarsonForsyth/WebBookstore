@@ -62,8 +62,7 @@ def generate_all_tables(conn):
         create_table(conn, sql_create_books_table)
         sql_create_authors_table = """ CREATE TABLE IF NOT EXISTS Authors (
             id INTEGER PRIMARY KEY,
-            first_name TEXT NOT NULL,
-            last_name TEXT
+            name TEXT NOT NULL
         );
         """
         create_table(conn, sql_create_authors_table)

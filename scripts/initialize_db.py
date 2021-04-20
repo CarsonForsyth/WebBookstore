@@ -1,6 +1,6 @@
 
 from generate_tables import *
-#from populate_tables import *
+from populate_tables import *
 from initialize_connection import *
 
 
@@ -15,7 +15,7 @@ except:
     raise Exception('Establishing connection to database ' + DB_Pathname + ' failed')
 
 generate_all_tables(conn)
-#populate(conn)
+populate(conn)
 
 
 
