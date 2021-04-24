@@ -1,0 +1,55 @@
+{% extends "navigation.html" %}
+{% block content %}
+<body>
+  <h1>Books Currently in Cart: </h1>
+    {% if not book_list %}
+        <p>Your cart is currently empty</p>
+    {% else %}
+    {% if addr_list %}
+    <form action="/sendCart" method="POST">
+        <select class="form-select form-select-lg mb-3">
+            <option selected>Choose Address</option>
+            {% for addr in addr_list%}
+            <option value="{{addr['id']}}">{{addr['street_number']}} {{addr['street_name']}}, {{addr['city']}}, {{addr['region']}}, {{addr['country']}}, {{addr['zip_code']}}
+                {% if addr['apt_number']%}, apt. #{{addr['apt_number']}} {% endif %}</option>
+            {% endfor %}
+          </select>
+        <button type="submit" class="btn btn-secondary btn-sm">Purchase All</button>
+    </form>
+    {% else %}
+    You need to add an address before purchase.
+    {% endif %}
+    {% for book in book_list %}
+        <div class="row">
+        {% include "book_card.html" %}
+            <div class="col-sm-4">
+                <form action="/updateItem" method="POST">
+                    <input type="hidden" name="bookID" value="{{book['id']}}">
+                    <div class="input-group">
+                        <select class="custom-select" name="quantity">
+                            <option selected>Set Quantity...</option>
+                            <option value="0">0</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                        </select>
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-secondary" type="submit">Update Quantity</button>
+                        </div>
+                    </div>
+                </form>
+                <p>Quantity is {{book['quantity']}}</p>
+                <p>Price for each is ${{book['price']}}</p>
+                <h4>Total for this item: ${{book['price']*book['quantity']}}</h4>
+            </div>
+        </div>
+        {% endfor %}
+    {% endif %}
+</body>
+{% endblock %}

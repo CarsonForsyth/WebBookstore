@@ -1,0 +1,35 @@
+{% extends "navigation.html" %}
+{% block content %}
+<body>
+    <h1> Orders: </h1>
+    <table class="table">
+        <thead>
+            <tr>
+            <th scope="col">Time</th>
+            <th scope="col">First</th>
+            <th scope="col">Last</th>
+            <th scope="col">Phone</th>
+            <th scope="col">Address</th>
+            <th scope="col">Item</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td>{{order['timestamp']}}</td>
+                <td>{{order['first_name']}}</td>
+                <td>{{order['last_name']}}</td>
+                <td>{{order['phone']}}</td>
+                <td>{{order['street_number']}} {{order['street_name']}}, {{order['city']}}, {{order['region']}}, {{order['country']}}, {{order['zip_code']}}
+                    {% if order['apt_number']%}, apt. #{{order['apt_number']}} {% endif %}
+                </td>
+                <td>
+                    {{order['quantity']}} copies <a href="/view-book?bookID={{order['book_id']}}" class="link-primary">{{order['title']}}</a>
+                </td>
+            </tr>
+            {% endfor %}
+            
+        </tbody>
+    </table>
+</body>
+{% endblock %}

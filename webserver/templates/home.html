@@ -1,39 +1,16 @@
-<nav class="navbar navbar-inverse" role="navigation">
-    <div class="container-fluid">
-      <div class="navbar-header">
-        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
-          <span class="sr-only">Toggle navigation</span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-        </button>
-        <a class="navbar-brand" href="/">Jinja!</a>
-      </div>
-  
-      <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-        <ul class="nav navbar-nav">
-          <li class="active"><a href="#">Link</a></li>
-          <li><a href="#">Link</a></li>
-        </ul>
-        <form class="navbar-form navbar-left" role="search">
-          <div class="form-group">
-            <input type="text" class="form-control" placeholder="Search">
-          </div>
-          <button type="submit" class="btn btn-default">Submit</button>
-        </form>
-        <ul class="nav navbar-nav navbar-right">
-          <li><a href="#">Link</a></li>
-          <li class="dropdown">
-            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Dropdown <b class="caret"></b></a>
-            <ul class="dropdown-menu">
-              <li><a href="#">Action</a></li>
-              <li><a href="#">Another action</a></li>
-              <li><a href="#">Something else here</a></li>
-              <li class="divider"></li>
-              <li><a href="#">Separated link</a></li>
-            </ul>
-          </li>
-        </ul>
-      </div><!-- /.navbar-collapse -->
-    </div><!-- /.container-fluid -->
-  </nav>
+{% extends "navigation.html" %}
+{% block content %}
+<body>
+<div class="jumbotron">
+    <h1 class="display-4">Welcome to Carson's Bookstore!</h1>
+    <p class="lead">For Computer Science 431w with Dong Xie, Spring 2021</p>
+    <hr class="my-4">
+    <p>This website is written in Python using the Flask Framework, and a SQLite 3 Database for storage. Jinja and Bootstrap work together to form the frontend.</p>
+    {% if session['user_id'] %}
+        <p>Welcome back, you are currently logged in</p>
+    {% else %}
+        <a class="btn btn-dark btn-block" href="/login" role="button">Click here to sign into your account</a>
+    {% endif %}
+</div>
+</body>
+{% endblock %}

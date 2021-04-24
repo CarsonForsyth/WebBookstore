@@ -1,0 +1,101 @@
+{% extends "navigation.html" %}
+{% block content %}
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <h1>{{book['title']}}</h1>
+        </div>
+        <div class="row">
+            <div class="col-sm-8">
+                <h5>By: {{book['name']}}</h5>
+            </div>
+            <div class="col-sm-2">
+                <p>{{book['stock']}} in stock at ${{book['price']}}:</p>
+            </div>
+            <div class="col-sm-2">
+                <form action="/updateItem" method="POST">
+                    <input type="hidden" name="bookID" value="{{book['id']}}">
+                    <input type="hidden" name="quantity" value="1">
+                    <button type="submit" class="btn btn-primary btn-dark">Order Now</button>
+                </form>
+            </div>
+        </div>
+        <table class="table table-bordered">
+            <tbody>
+                <tr>
+                    <td>Publisher</td>
+                    <td>{{book['publisher']}}</td>
+                </tr>
+                <tr>
+                    <td>Publish Date</td>
+                    <td>{{book['pub_date']}}</td>
+                </tr>
+                <tr>
+                    <td>Language</td>
+                    <td>{{book['language']}}</td>
+                </tr>
+                <tr>
+                    <td>Page Count</td>
+                    <td>{{book['num_pages']}}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <h2>Comments:</h2>
+    {% for comment in comments %}
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">{{comment['first_name']}} {{comment['last_name']}}</h5>
+            <div class="row">
+                <div class="col-sm-2">
+                    <h6 class="card-subtitle mb-2 text-muted">{{comment['timestamp']}}</h6>
+                </div>
+                <div class="col-sm-4">
+                    {% if comment['avg_rating'] %}
+                        <p>Current Rating: </p>
+                        {% if (comment['avg_rating']*10 < -5) %}
+                            <i>Not Useful</i>
+                        {% elif comment['avg_rating']*10 < 5 %}
+                            <i>Useful</i>
+                        {% else %}
+                            <i>Very Useful</i>
+                        {% endif %}
+                    {% else %}
+                        <p>No ratings for this comment yet</p>
+                    {% endif %}
+                </div>
+            </div>
+            ID is {{comment['id']}}
+            <h6 >Score: {{comment['score']}}</h6>
+            <p class="card-text">{{comment['content']}}</p>
+            <div class="row">
+                <div class="col-sm-2">
+                    <p>Leave a rating: </p>
+                </div>
+                <div class="col-sm-2">
+                    <form action="/updateRating" method="POST">
+                        <input type="hidden" value="{{comment['id']}}" name="comment_id">
+                        <input type="hidden" value="-1" name="value">
+                        <button type="submit" class="btn btn-secondary btn-sm">Not Useful</button>
+                    </form>
+                </div>
+                <div class="col-sm-2">
+                    <form action="/updateRating" method="POST">
+                        <input type="hidden" value="{{comment['id']}}" name="comment_id">
+                        <input type="hidden" value="0" name="value">
+                        <button type="submit" class="btn btn-secondary btn-sm">Useful</button>
+                    </form>
+                </div>
+                <div class="col-sm-2">
+                    <form action="/updateRating" method="POST">
+                        <input type="hidden" value="{{comment['id']}}" name="comment_id">
+                        <input type="hidden" value="1" name="value">
+                        <button type="submit" class="btn btn-secondary btn-sm">Very Useful</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+      </div>
+    {% endfor %}
+</body>
+{% endblock %}

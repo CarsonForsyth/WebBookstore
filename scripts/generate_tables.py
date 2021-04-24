@@ -18,7 +18,7 @@ def generate_all_tables(conn):
         # Users
         sql_create_users_table =  """ CREATE TABLE IF NOT EXISTS Users ( 
             id INTEGER PRIMARY KEY,
-            password BLOB,
+            password TEXT,
             username TEXT NOT NULL UNIQUE,
             email TEXT NOT NULL UNIQUE,
             role TEXT CHECK (role IN ('manager', 'employee', 'default')) NOT NULL DEFAULT 'default'
@@ -143,17 +143,19 @@ def generate_all_tables(conn):
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
             book_id INTEGER,
             user_id INTEGER,
-            FOREIGN KEY (book_id) REFERENCES Books(id) ON DELETE CASCADE,
-            FOREIGN KEY (user_id) REFERENCES Customers(id) ON DELETE CASCADE
+            FOREIGN KEY (book_id) REFERENCES Books(id),
+            FOREIGN KEY (user_id) REFERENCES Customers(id)
         );
         """
         create_table(conn, sql_create_comments_table)
         sql_create_ratings_table = """ CREATE TABLE IF NOT EXISTS Ratings
         (
+            user_id INTEGER,
             comment_id INTEGER,
-            value INTEGER NOT NULL CHECK (value >= 0 AND value <= 2),
+            value INTEGER NOT NULL CHECK (value >= -1 AND value <= 1),
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (comment_id) REFERENCES Comments(id) ON DELETE CASCADE
+            FOREIGN KEY (comment_id) REFERENCES Comments(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES Users(id)
         );
         """
         create_table(conn, sql_create_ratings_table)
@@ -179,6 +181,7 @@ def generate_all_tables(conn):
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
             order_quarter INTEGER,
             time_fulfilled DATETIME DEFAULT NULL,
+            fulfilled_by INTEGER DEFAULT NULL,
             ships_to INTEGER,
             placed_by INTEGER,
             FOREIGN KEY (ships_to) REFERENCES Addresses(id)
@@ -189,7 +192,6 @@ def generate_all_tables(conn):
         sql_create_orderItems_table = """ CREATE TABLE IF NOT EXISTS OrderItems
         (
             id INTEGER PRIMARY KEY,
-            price REAL NOT NULL,
             quantity INTEGER DEFAULT 1 NOT NULL,
             book_id INTEGER,
             order_id INTEGER,
@@ -219,33 +221,41 @@ def generate_all_tables(conn):
         """
         create_table(conn, sql_create_couponDiscounts_table)
 
+        sql_create_cart_table = """ CREATE TABLE IF NOT EXISTS Cart
+        (
+            book_id INTEGER,
+            user_id INTEGER,
+            quantity INTEGER,
+            FOREIGN KEY (book_id) REFERENCES Books(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES Customers(user_id) ON DELETE CASCADE
+        );
+        """
+        create_table(conn, sql_create_cart_table)
+
         # VIEWS
-        sql_create_bookStats_view = """ CREATE VIEW IF NOT EXISTS BookStats AS SELECT * FROM 
-            (
-            SELECT Books.isbn13 AS isbn, SUM(quantity) AS copies_sold, publisher, order_quarter FROM Books INNER JOIN OrderItems INNER JOIN Orders GROUP BY Books.isbn13
-            );
+        sql_create_bookStats_view = """ CREATE VIEW IF NOT EXISTS BookStats AS 
+            SELECT Books.id, isbn13, Books.price, sum(quantity) as copies_sold, publisher, order_quarter FROM OrderItems, Orders, Books WHERE OrderItems.book_id = Books.id AND OrderItems.order_id = Orders.id GROUP BY Books.id
         """
         create_table(conn, sql_create_bookStats_view)
 
-        sql_create_commentRating_view = """ CREATE VIEW IF NOT EXISTS CommentRating AS SELECT * FROM 
-            (
-            SELECT user_id, Comments.comment_id, AVG(value) AS avg_rating FROM Comments INNER JOIN Ratings GROUP BY user_id
-            );
+        sql_create_commentRating_view = """ CREATE VIEW IF NOT EXISTS CommentRating AS
+            SELECT user_id, Comments.id AS comment_id, AVG(value) AS avg_rating FROM Comments INNER JOIN Ratings ON Comments.id = Ratings.comment_id GROUP BY user_id;
         """
         create_table(conn, sql_create_commentRating_view)
 
         sql_create_userStats_view = """ CREATE VIEW IF NOT EXISTS UserStats AS SELECT * FROM 
             (  
-            (SELECT Users.user_id, SUM(Trusts.value) AS trust_rating 
-            FROM Users INNER JOIN Trusts)
+            (SELECT Users.id AS id, SUM(Trusts.value) AS trust_rating 
+            FROM Users INNER JOIN Trusts ON Users.id = Trusts.user_id GROUP BY Users.id) AS TrustRate
             INNER JOIN
-            (SELECT CommentRating.user_id, AVG(avg_rating) AS usefulness 
-            FROM CommentRating GROUP BY CommentRating.user_id)
+            (SELECT CommentRating.user_id as id, AVG(avg_rating) AS usefulness 
+            FROM CommentRating GROUP BY CommentRating.user_id) AS CommentRate
+            ON TrustRate.id = CommentRate.id
             );
         """
         create_table(conn, sql_create_userStats_view)
 
-        sql_create_addressOrderStats_view = """ CREATE VIEW IF NOT EXISTS AddressOrderStats AS SELECT * FROM (
+        sql_create_addressOrderStats_view = """ CREATE VIEW IF NOT EXISTS AddressOrderStats AS 
             SELECT city, region, country, quarter, SUM(total) AS order_total FROM
             (
                 SELECT order_id, address_id, quantity*SUM(price) AS total 
@@ -253,7 +263,11 @@ def generate_all_tables(conn):
                 GROUP BY order_id
             ) 
             INNER JOIN Addresses
-            );
         """
         create_table(conn, sql_create_addressOrderStats_view)
+
+        sql_create_bookRatings_view = """ CREATE VIEW IF NOT EXISTS BookRatings AS 
+            SELECT Books.id as book_id, AVG(score) FROM Comments INNER JOIN Books ON book_id = Books.id GROUP BY Books.id
+        """
+        create_table(conn, sql_create_bookRatings_view)
         

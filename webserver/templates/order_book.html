@@ -1,0 +1,26 @@
+{% extends "navigation.html" %}
+{% block content %}
+<body>
+    
+    <table class="table table-bordered">
+        <tbody>
+            <tr>
+                <td>Publisher</td>
+                <td>{{book['publisher']}}</td>
+            </tr>
+            <tr>
+                <td>Publish Date</td>
+                <td>{{book['pub_date']}}</td>
+            </tr>
+            <tr>
+                <td>Language</td>
+                <td>{{book['language']}}</td>
+            </tr>
+            <tr>
+                <td>Page Count</td>
+                <td>{{book['num_pages']}}</td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+{% endblock %}

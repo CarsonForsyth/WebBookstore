@@ -1,0 +1,26 @@
+{% extends "navigation.html" %}
+{% block content %}
+<body>
+    <h1>Your trusted users are: </h1>
+    <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">Username</th>
+            <th scope="col">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            {% for user in trustedUsers %}
+                <td>{{user['username']}}</td>
+                {% if user['value'] == 1 %}
+                    <td>Trusted</td>
+                {% else %}
+                    <td>Distrusted</td>
+                {% endif %}
+            {% endfor %}
+          </tr>
+        </tbody>
+      </table>
+</body>
+{% endblock %}
