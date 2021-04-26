@@ -1,0 +1,40 @@
+{% extends "navigation.html" %}
+{% block content %}
+<body>
+    <h1>Manager Functions</h1>
+    <h2>View Most Useful Customers:</h2>
+    <form action="/get-top-useful" method="GET">
+      <div class="form-group">
+          <label for="num_rows">Number of Customers to Fetch</label>
+          <input type="number" class="form-control" name="num_rows" value="10">
+      </div>
+      <div class="d-grid gap-2">
+          <button type="submit" class="btn btn-dark">Get Customers</button>
+      </div>
+    </form>
+    <h2>View Most Trusted Customers</h2>
+    <form action="/get-top-trusted" method="GET">
+      <div class="form-group">
+          <label for="num_rows">Number of Customers to Fetch</label>
+          <input type="number" class="form-control" name="num_rows" value="10">
+      </div>
+      <div class="d-grid gap-2">
+          <button type="submit" class="btn btn-dark">Get Customers</button>
+      </div>
+    </form>
+    <h2>View Book Statistics</h2>
+    <form action="/" method="GET">
+      <div class="form-group">
+          <label for="num_rows">Number of Books to Fetch</label>
+          <input type="number" class="form-control" name="num_rows" value="10">
+      </div>
+      <div class="d-grid gap-2">
+        <div class="btn-group" role="group" aria-label="Basic example">
+          <button type="submit" class="btn btn-dark" formaction="get-popular-books">By Book</button>
+          <button type="submit" class="btn btn-dark" formaction="get-popular-authors">By Author</button>
+          <button type="submit" class="btn btn-dark" formaction="get-popular-publishers">By Publisher</button>
+        </div>
+      </div>
+    </form>
+</body>
+{% endblock %}

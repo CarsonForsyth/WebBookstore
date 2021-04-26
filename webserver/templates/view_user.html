@@ -1,0 +1,25 @@
+{% extends "navigation.html" %}
+{% block content %}
+<body>
+    <h1>User Information</h1>
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">User Name</th>
+          <th scope="col">Email</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+            <td>{{user['username']}}</td>
+            <td>{{user['email']}}</td>
+        </tr>
+      </tbody>
+    </table>
+    {% if session['role'] == "manager" %}
+    <div class="d-grid gap-2">
+        <a class="btn btn-dark button" href="/update-user?userID={{user['id']}}" role="button">Update this User</a>   
+    </div> 
+    {% endif %}
+</body>
+{% endblock %}

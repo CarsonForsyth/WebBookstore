@@ -1,0 +1,24 @@
+{% extends "navigation.html" %}
+{% block content %}
+<body>
+    <h1>Update User Information</h1>
+    <form action="/update-user" method="POST">
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" class="form-control" name="username" value="{{user['username']}}">
+        </div>
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="text" class="form-control" name="email" value="{{user['email']}}">
+        </div>
+        <div class="form-group">
+            <label for="role">Email</label>
+            <input type="text" class="form-control" name="role" value="{{user['role']}}">
+        </div>
+        <br>
+        <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-dark">Update User</button>
+        </div>
+    </form>
+</body>
+{% endblock %}

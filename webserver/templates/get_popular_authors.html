@@ -1,0 +1,12 @@
+{% extends "navigation.html" %}
+{% block content %}
+<body>
+    <h1>Most Popular Authors</h1>
+        {% for author in author_list %}
+        <div class="row"><h4>
+                <a href="/view-author?authorID={{author['id']}}" class="link-primary">{{author['name']}}</a>
+                sold {{author['copies_sold']}} in quarter {{author['order_quarter']}}</h4>
+        </div>
+    {% endfor %}
+</body>
+{% endblock %}

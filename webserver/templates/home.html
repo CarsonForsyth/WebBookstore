@@ -9,7 +9,14 @@
     {% if session['user_id'] %}
         <p>Welcome back, you are currently logged in</p>
     {% else %}
-        <a class="btn btn-dark btn-block" href="/login" role="button">Click here to sign into your account</a>
+    <div class="d-grid gap-2">
+        <a class="btn btn-dark button" href="/login" role="button">Click here to sign into your account</a>
+    </div>
+    {% endif %}
+    {% if session['role'] == "manager" %}
+    <div class="d-grid gap-2">
+        <a class="btn btn-dark button" href="/manager-panel" role="button">View Manager Panel</a> 
+    </div>   
     {% endif %}
 </div>
 </body>

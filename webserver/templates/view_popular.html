@@ -1,13 +1,11 @@
 {% extends "navigation.html" %}
 {% block content %}
 <body>
-    <h1>Top 100 Popular Books: </h1>
-    <ul>
-      <div class="row">
-        {% for book in book_list %}
-          {% include "book_card.html" %}
-        {% endfor %}
-      </div>
-    </ul>
+    <h1>Top 100 Popular Books</h1>
+    <div class="row">
+      {% for book in book_list %}
+        {% include "book_card.html" %}
+      {% endfor %}
+    </div>
 </body>
 {% endblock %}

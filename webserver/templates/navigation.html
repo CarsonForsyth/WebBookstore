@@ -18,17 +18,18 @@
           <li class="nav-item"><a class="nav-link" href="/popular-books">Popular Books</a></li>
           <li class="nav-item"><a class="nav-link" href="/highly-rated-books">Highly Rated Books</a></li>
         </ul>
-        <form class="d-flex">
-          <input class="form-control me-2" type="search" placeholder="Search for book..." aria-label="Search">
-          <button class="btn btn-outline-dark" type="submit">Search</button>
-        </form>
+        <ul>
+          <a href="/search" class="btn btn-secondary btn" role="button">Find a Book</a>
+        </ul>
         <ul class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">My Account</a>
+          <a class="btn btn-secondary dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">My Account</a>
           <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-            <li><a class="dropdown-item" href="#">My Orders</a></li>
-            <li><a class="dropdown-item" href="#">My Comments</a></li>
-            <li><a class="dropdown-item" href="#">Trusted Users</a></li>
-            <li><a class="dropdown-item" href="#">My Information</a></li>
+            <li><a class="dropdown-item" href="/cart">My Cart</a></li>
+            <li><a class="dropdown-item" href="/my-orders">My Orders</a></li>
+            <li><a class="dropdown-item" href="/my-addresses">My Addresses</a></li>
+            <li><a class="dropdown-item" href="my-comments">My Comments</a></li>
+            <li><a class="dropdown-item" href="/my-trusted-users">My Trusted Users</a></li>
+            <li><a class="dropdown-item" href="/update-customer">My Information</a></li>
             <li><hr class="dropdown-divider"></li>
             <li>
               {% if session['user_id'] %}

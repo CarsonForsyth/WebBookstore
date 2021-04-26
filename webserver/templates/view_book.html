@@ -7,19 +7,30 @@
         </div>
         <div class="row">
             <div class="col-sm-8">
-                <h5>By: {{book['name']}}</h5>
+                <h5>By: 
+                    {% for author in author_list %}
+                        <a href="/view-author?authorID={{author['id']}}" class="link-primary">{{author['name']}}</a><br>
+                    {% endfor %}
+                </h5>
             </div>
             <div class="col-sm-2">
                 <p>{{book['stock']}} in stock at ${{book['price']}}:</p>
             </div>
             <div class="col-sm-2">
-                <form action="/updateItem" method="POST">
+                <form action="/update-item" method="POST">
                     <input type="hidden" name="bookID" value="{{book['id']}}">
                     <input type="hidden" name="quantity" value="1">
-                    <button type="submit" class="btn btn-primary btn-dark">Order Now</button>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-dark">Order Now</button>
+                    </div>
                 </form>
             </div>
         </div>
+        {% if session['role'] == "manager" %}
+            <div class="d-grid gap-2">
+                <a class="btn btn-dark button" href="/update-book?bookID={{book['id']}}" role="button">Update this Book</a> 
+            </div><br>
+        {% endif %}
         <table class="table table-bordered">
             <tbody>
                 <tr>
@@ -38,64 +49,96 @@
                     <td>Page Count</td>
                     <td>{{book['num_pages']}}</td>
                 </tr>
+                <tr>
+                    <td>ISBN</td>
+                    <td>{{book['isbn']}}</td>
+                </tr>
+                <tr>
+                    <td>ISBN (13)</td>
+                    <td>{{book['isbn13']}}</td>
+                </tr>
             </tbody>
         </table>
     </div>
-    <h2>Comments:</h2>
-    {% for comment in comments %}
-    <div class="card">
-        <div class="card-body">
-            <h5 class="card-title">{{comment['first_name']}} {{comment['last_name']}}</h5>
-            <div class="row">
-                <div class="col-sm-2">
-                    <h6 class="card-subtitle mb-2 text-muted">{{comment['timestamp']}}</h6>
-                </div>
-                <div class="col-sm-4">
-                    {% if comment['avg_rating'] %}
-                        <p>Current Rating: </p>
-                        {% if (comment['avg_rating']*10 < -5) %}
-                            <i>Not Useful</i>
-                        {% elif comment['avg_rating']*10 < 5 %}
-                            <i>Useful</i>
-                        {% else %}
-                            <i>Very Useful</i>
-                        {% endif %}
-                    {% else %}
-                        <p>No ratings for this comment yet</p>
-                    {% endif %}
-                </div>
+    <h2>Add a comment</h2>
+    <form action="update-comment" method="POST">
+        <div class="form-group">
+            <label for="score">Score for book</label>
+            <select class="form-control" name="score"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select>
+        </div>
+        <div class="form-group">
+            <label for="content">Leave a review</label>
+            <input type="text" class="form-control" name="content">
+        </div>
+        <input type="hidden" value="{{book['id']}}" name='book_id'>
+        <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-dark">Leave comment</button>
+        </div>
+    </form>
+    <br>
+    <h2>View comments</h2>
+    <form action="/view-book" method="GET">
+        <input type="hidden" name="bookID" value="{{book['id']}}">
+        <div class="form-group">
+            <label for="numRows">Number of Comments to View</label>
+            <input type="number" class="form-control" name="numRows" value="5">
+        </div>
+        <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-dark button">Get Comments</button>
+        </div>
+    </form>
+    <br>
+    {% if comment_list %}
+        {% for comment in comment_list %}
+        <div class="row">
+            <div class="col-sm-8">
+                {% include "comment_card.html" %}
             </div>
-            ID is {{comment['id']}}
-            <h6 >Score: {{comment['score']}}</h6>
-            <p class="card-text">{{comment['content']}}</p>
-            <div class="row">
-                <div class="col-sm-2">
-                    <p>Leave a rating: </p>
+            <div class="col-sm-4">
+                {% if comment['user_id'] != session.get('user_id') %}
+                <h6>Rate this comment </h6>
+                <form action="/update-rating" method="POST">
+                    <input type="hidden" value="{{comment['id']}}" name="comment_id">
+                    <input type="hidden" value="1" name="value"><div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-outline-secondary btn-sm">Very Useful</button>
+                    </div>
+                </form>
+                <form action="/update-rating" method="POST">
+                    <input type="hidden" value="{{comment['id']}}" name="comment_id">
+                    <input type="hidden" value="0" name="value"><div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-outline-secondary btn-sm">Useful</button>
+                    </div>
+                </form>
+                <form action="/update-rating" method="POST">
+                    <input type="hidden" value="{{comment['id']}}" name="comment_id">
+                    <input type="hidden" value="-1" name="value"><div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-outline-secondary btn-sm">Not Useful</button>
+                    </div>
+                </form>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <form action="/my-trusted-users" method="POST">
+                            <input type="hidden" value="{{comment['user_id']}}" name="user_id">
+                            <input type="hidden" value="1" name="value">
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-outline-secondary btn-sm">Trust user</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="col-sm-6">
+                        <form action="/my-trusted-users" method="POST">
+                            <input type="hidden" value="{{comment['user_id']}}" name="user_id">
+                            <input type="hidden" value="-1" name="value">
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-outline-secondary btn-sm">Distrust user</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-                <div class="col-sm-2">
-                    <form action="/updateRating" method="POST">
-                        <input type="hidden" value="{{comment['id']}}" name="comment_id">
-                        <input type="hidden" value="-1" name="value">
-                        <button type="submit" class="btn btn-secondary btn-sm">Not Useful</button>
-                    </form>
-                </div>
-                <div class="col-sm-2">
-                    <form action="/updateRating" method="POST">
-                        <input type="hidden" value="{{comment['id']}}" name="comment_id">
-                        <input type="hidden" value="0" name="value">
-                        <button type="submit" class="btn btn-secondary btn-sm">Useful</button>
-                    </form>
-                </div>
-                <div class="col-sm-2">
-                    <form action="/updateRating" method="POST">
-                        <input type="hidden" value="{{comment['id']}}" name="comment_id">
-                        <input type="hidden" value="1" name="value">
-                        <button type="submit" class="btn btn-secondary btn-sm">Very Useful</button>
-                    </form>
-                </div>
+                {% endif %}
             </div>
         </div>
-      </div>
-    {% endfor %}
+        {% endfor %}
+    {% endif %}
 </body>
 {% endblock %}

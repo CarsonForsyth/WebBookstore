@@ -1,0 +1,21 @@
+{% extends "navigation.html" %}
+{% block content %}
+<body>
+    <h1>Update your comment on book <a href="/view-book?bookID={{book['id']}}" class="link-primary">{{book['title']}}</a></h1>
+        <form action="/update-comment" method="POST">
+            <div class="form-group">
+                <label for="score">Score</label>
+                <select class="form-control" value="{{comment['score']}}" name="score"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select>
+            </div>
+            <div class="form-group">
+                <label for="content">Leave a Review</label>
+                <input type="text" class="form-control" name="content" value="{{comment['content']}}">
+            </div>
+            <input type="hidden" name="comment_id" value="{{comment['id']}}">
+            <input type="hidden" name="book_id" value="{{book['id']}}">
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-dark">Update Comment</button>
+            </div>
+        </form>
+</body>
+{% endblock %}

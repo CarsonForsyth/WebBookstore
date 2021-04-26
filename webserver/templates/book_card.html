@@ -1,10 +1,15 @@
 
-    <div class="col-sm-4">
-    <div class="card" style="width: 24rem; height: 12rem;">
+<div class="col-sm-4">
+    <div class="card" style="width: 26rem; height: 20rem;">
         <div class="card-body">
-        <h6 class="card-title">{{book["title"]}}</h6>
-        <p class="card-text">{{book["publisher"]}}</p>
-        <a href="/view-book?bookID={{book['id']}}" class="btn btn-primary align-text-bottom">View book...</a>
+            <h6 class="card-title">{{book["title"]}}</h6>
+            <p class="card-text">{{book["publisher"]}} | {{book["pub_date"].split(" ")[0]}}</p> 
+            <p class="card-text">ISBN (13): {{book["isbn13"]}}</p>
+            <p class="card-text">{% if book['stock'] > 0 %} In stock at ${{book["price"]}} {% else %} Out of stock.{% endif %}</p>
+            <p class="card-text">{{book["num_pages"]}} pages | Language code {{book["language"]}}</p>
+            <div class="text-right">
+                <a href="/view-book?bookID={{book['id']}}" class="btn btn-primary">View book...</a>
+            </div>
         </div>
     </div>
-    </div>
+</div>

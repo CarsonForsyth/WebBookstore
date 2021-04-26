@@ -1,0 +1,77 @@
+{% extends "navigation.html" %}
+{% block content %}
+<body>
+    <h1>Search for Books</h1>
+    <form action="search" method="GET">
+        {% if request.args %}
+            <div class="form-group">
+                <label for="title">Search Title</label>
+                <input type="text" class="form-control" name="title" value="{{request.args.get('title')}}">
+            </div>
+            <div class="form-group">
+                <label for="author">Search Authors</label>
+                <input type="text" class="form-control" name="author" value="{{request.args.get('author')}}">
+            </div>
+            <div class="form-group">
+                <label for="publisher">Search Publishers</label>
+                <input type="text" class="form-control" name="publisher" value="{{request.args.get('publisher')}}">
+            </div>
+            <div class="form-group">
+                <label for="language">Search Languages</label>
+                <input type="text" class="form-control" name="language" value="{{request.args.get('language')}}">
+            </div>
+        {% else %}
+            <div class="form-group">
+                <label for="title">Search Title</label>
+                <input type="text" class="form-control" name="title">
+            </div>
+            <div class="form-group">
+                <label for="author">Search Authors</label>
+                <input type="text" class="form-control" name="author">
+            </div>
+            <div class="form-group">
+                <label for="publisher">Search Publishers</label>
+                <input type="text" class="form-control" name="publisher">
+            </div>
+            <div class="form-group">
+                <label for="language">Search Languages</label>
+                <input type="text" class="form-control" name="language">
+            </div>
+            
+        {% endif %}
+        <div class="form-group">
+            <label for="numRows">Number of Results Desired</label>
+            <input type="number" class="form-control" value="20" name="numRows">
+        </div>
+        <br>
+        <div class="row">
+            <div class="btn-group" role="group">
+                <input type="radio" class="btn-check" name="sort" id="pub_date_asc" value="1" checked>
+                <label class="btn btn-outline-dark" for="pub_date_asc">Publication Date, Ascending</label>
+            
+                <input type="radio" class="btn-check" name="sort" id="pub_date_desc" value="2">
+                <label class="btn btn-outline-dark" for="pub_date_desc">Publication Date, Descending</label>
+            
+                <input type="radio" class="btn-check" name="sort" id="all_user_score" value="3">
+                <label class="btn btn-outline-dark" for="all_user_score">All User Scores, Descending</label>
+
+                <input type="radio" class="btn-check" name="sort" id="trusted_user_score" value="4">
+                <label class="btn btn-outline-dark" for="trusted_user_score">Trusted User Scores, Descending</label>
+            </div>
+        </div>
+        <br>
+        <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-dark">Search Books</button>
+        </div>
+    </form>
+    <br>
+    {% if book_list %}
+        <h1>Query Results</h1>
+        <div class="row">
+            {% for book in book_list %}
+            {% include "book_card.html" %}
+            {% endfor %}
+        </div>
+    {% endif %}
+</body>
+{% endblock %}

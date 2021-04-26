@@ -1,0 +1,44 @@
+{% extends "navigation.html" %}
+{% block content %}
+<body>
+    {% if data %}
+        <h1>Update your information</h1>
+        <form action="/update-customer" method="POST">
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" class="form-control" name="phone" value="{{data['phone']}}">
+            </div>
+            <div class="form-group">
+                <label for="first_name">First Name</label>
+                <input type="text" class="form-control" name="first_name" value="{{data['first_name']}}">
+            </div>
+            <div class="form-group">
+                <label for="last_name">Last Name</label>
+                <input type="text" class="form-control" name="last_name" value="{{data['last_name']}}">
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-dark">Modify Information</button>
+            </div>
+        </form>
+    {% else %}
+        <h1>Register as a customer: </h1>
+        <form action="/updateCustomer" method="POST">
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" class="form-control" name="phone">
+            </div>
+            <div class="form-group">
+                <label for="first_name">First Name</label>
+                <input type="text" class="form-control" name="first_name">
+            </div>
+            <div class="form-group">
+                <label for="last_name">Last Name</label>
+                <input type="text" class="form-control" name="last_name">
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-dark">Submit Information</button>
+            </div>
+        </form>
+    {% endif %}
+</body>
+{% endblock %}

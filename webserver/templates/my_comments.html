@@ -1,0 +1,13 @@
+{% extends "navigation.html" %}
+{% block content %}
+<body>
+    <h1>Viewing my comments </h1>
+        {% for comment in comment_list %}
+            {% include "comment_card.html" %}
+            <div class="d-grid gap-2">
+                <a href="/update-comment?commentID={{comment['id']}}" class="btn btn-secondary btn" role="button">Update this Comment</a>
+            </div>
+        {% endfor %}
+        
+</body>
+{% endblock %}

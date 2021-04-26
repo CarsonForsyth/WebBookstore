@@ -1,0 +1,47 @@
+{% extends "navigation.html" %}
+{% block content %}
+<body>
+    {% if author %}
+        <h1>Modify Author</h1>
+        <form action="/update-author" method="POST">
+            <div class="form-group">
+                <label for="name">Name of Author</label>
+                <input type="text" class="form-control" name="name" value="{{author['name']}}">
+            </div>
+            <input type="hidden" name="id" value="{{author['id']}}">
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-dark">Modify Author</button>
+            </div>
+        </form>
+        <h1>Add Book written by Author</h1>
+        <form action="/update-author-writes" method="POST">
+            <div class="form-group">
+                <label for="isbn13">ISBN (13) of Book written by this Author</label>
+                <input type="number" class="form-control" name="isbn13" value="{{author['name']}}">
+            </div>
+            <input type="hidden" name="author_id" value="{{author['id']}}">
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-dark">Add Book to Author</button>
+            </div>
+        </form>
+        <br>
+        <h1>Current Books by Author</h1>
+        <div class="row">
+            {% for book in book_list %}
+                {% include "book_card.html" %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <h1>Add an Author </h1>
+        <form action="/update-author" method="POST">
+            <div class="form-group">
+                <label for="name">Name of Author</label>
+                <input type="text" class="form-control" name="name">
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-dark">Add Author</button>
+            </div>
+        </form>
+    {% endif %}
+</body>
+{% endblock %}

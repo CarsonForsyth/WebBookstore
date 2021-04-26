@@ -10,16 +10,16 @@
           </tr>
         </thead>
         <tbody>
-          <tr>
-            {% for user in trustedUsers %}
+          {% for user in user_list %}
+            <tr>
                 <td>{{user['username']}}</td>
                 {% if user['value'] == 1 %}
                     <td>Trusted</td>
                 {% else %}
                     <td>Distrusted</td>
                 {% endif %}
-            {% endfor %}
-          </tr>
+            </tr>
+          {% endfor %}
         </tbody>
       </table>
 </body>

@@ -1,0 +1,14 @@
+{% extends "navigation.html" %}
+{% block content %}
+<body>
+    <h1>Most Popular Books</h1>
+    {% for book in book_list %}
+        <div class="row">
+            {% include "book_card.html" %}
+        <div class="col-sm-4">
+            has sold {{book['copies_sold']}} in quarter {{book['order_quarter']}}
+        </div>
+        </div>
+    {% endfor %}
+</body>
+{% endblock %}

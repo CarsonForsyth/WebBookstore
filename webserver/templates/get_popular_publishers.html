@@ -1,0 +1,11 @@
+{% extends "navigation.html" %}
+{% block content %}
+<body>
+    <h1>Most Popular Publishers</h1>
+        {% for publisher in publisher_list %}
+        <div class="row"><h4>
+            {{publisher['publisher']}} sold {{publisher['copies_sold']}} in quarter {{publisher['order_quarter']}}
+        </h4></div>
+    {% endfor %}
+</body>
+{% endblock %}

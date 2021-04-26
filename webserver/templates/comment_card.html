@@ -1,0 +1,35 @@
+<div class="card">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-sm-8">
+                <h5 class="card-title">{{comment['first_name']}} {{comment['last_name']}}</h5>
+            </div>
+            <div class="col-sm-4">
+                <div class="d-grid gap-2">
+                    <a class="btn btn-dark button" href="/view-user?userID={{comment['user_id']}}" role="button">View User</a>   
+                </div> 
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-2">
+                <h6 class="card-subtitle mb-2 text-muted">{{comment['timestamp'].split(" ")[0]}}</h6>
+            </div>
+            <div class="col-sm-4">
+                {% if comment['avg_rating'] %}
+                    <p>Current Rating: </p>
+                    {% if (comment['avg_rating']*10 < -5) %}
+                        <i>Not Useful</i>
+                    {% elif comment['avg_rating']*10 < 5 %}
+                        <i>Useful</i>
+                    {% else %}
+                        <i>Very Useful</i>
+                    {% endif %}
+                {% else %}
+                    <p>No ratings for this comment yet</p>
+                {% endif %}
+            </div>
+        </div>
+        <h6 >Score: {{comment['score']}}</h6>
+        <p class="card-text">{{comment['content']}}</p>
+    </div>
+</div>
