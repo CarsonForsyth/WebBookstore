@@ -2,7 +2,11 @@
 {% block content %}
 <body>
     <h1>Manager Functions</h1>
-    <h2>View Most Useful Customers:</h2>
+    <h2>View Sales</h2>
+    <div class="d-grid gap-2">
+      <a class="btn btn-dark btn" href="/sales" role="button">Sales</a>
+    </div>
+    <h2>View Most Useful Customers</h2>
     <form action="/get-top-useful" method="GET">
       <div class="form-group">
           <label for="num_rows">Number of Customers to Fetch</label>

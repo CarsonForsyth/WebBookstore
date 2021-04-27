@@ -1,7 +1,7 @@
 {% extends "navigation.html" %}
 {% block content %}
 <body>
-    <h1>Update your comment on book <a href="/view-book?bookID={{book['id']}}" class="link-primary">{{book['title']}}</a></h1>
+    <h2>Update your comment on <a href="/view-book?bookID={{book['id']}}" class="link-primary">{{book['title']}}</a></h2>
         <form action="/update-comment" method="POST">
             <div class="form-group">
                 <label for="score">Score</label>

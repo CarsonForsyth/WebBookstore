@@ -1,0 +1,22 @@
+{% extends "navigation.html" %}
+{% block content %}
+{% if sales_list %}
+<h2>Sales Available</h2>
+{% for sale in sales_list %}
+<div class="row">
+    <div class="col-sm-3">
+        <h5><a href="/update-sale?saleID={{sale['id']}}" class="link-primary">{{sale['name']}}</a></h5>
+    </div>
+    <div class="col-sm-9">
+        <p>From {{sale['date_start'].split(" ")[0]}} to {{sale['date_end'].split(" ")[0]}}, discount is {{100*sale['discount']}}% off.</p>
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<h2 class="text-muted">No sales currently.</h2>
+{% endif %}
+<h2>Create a new Sale</h2><br>
+<div class="d-grid gap-2">
+    <a class="btn btn-dark btn" href="/update-sale" role="button">Create a Sale</a>
+</div>
+{% endblock %}

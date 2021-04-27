@@ -9,6 +9,7 @@
             <th scope="col">First</th>
             <th scope="col">Last</th>
             <th scope="col">Phone</th>
+            <th scope="col">Total</th>
             <th scope="col">Address</th>
             <th scope="col">Item</th>
             </tr>
@@ -16,11 +17,17 @@
         <tbody>
             {% for order in orders %}
             <tr>
-                <td>{{order['timestamp']}}</td>
+                <td>{{order['timestamp'].split(" ")[0]}}</td>
                 <td>{{order['first_name']}}</td>
                 <td>{{order['last_name']}}</td>
                 <td>{{order['phone']}}</td>
-                <td>{{order['street_number']}} {{order['street_name']}}, {{order['city']}}, {{order['region']}}, {{order['country']}}, {{order['zip_code']}}
+                <td>{% if order['total']%}
+                        ${{"%.2f"|format(order['total'])}}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td>{{order['street_number']}} {{order['street_name']}}, {{order['city']}},<br>{{order['region']}}, {{order['country']}},<br>Postal Code: {{order['zip_code']}}
                     {% if order['apt_number']%}, apt. #{{order['apt_number']}} {% endif %}
                 </td>
                 <td>

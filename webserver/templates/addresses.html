@@ -9,7 +9,7 @@
 <h2 class="text-muted">No stored addresses currently.</h2>
 {% endif %}
 <h2>Add a new address to your account here</h2>
-<form action="/myAddresses" method="POST">
+<form action="/my-addresses" method="POST">
     <div class="form-group">
         <label for="street_number">Street Number</label>
         <input type="number" class="form-control" name="street_number">
@@ -38,6 +38,7 @@
         <label for="country">Country</label>
         <input type="text" class="form-control" name="country">
     </div>
+    <br>
     <div class="d-grid gap-2">
         <button type="submit" class="btn btn-dark">Add Address</button>
     </div>

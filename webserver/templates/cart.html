@@ -48,8 +48,14 @@
                     </div>
                 </form>
                 <p>Quantity is {{book['quantity']}}</p>
-                <p>Price for each is ${{book['price']}}</p>
-                <h4>Total for this item: ${{book['price']*book['quantity']}}</h4>
+                {% if book['discount'] %}
+                    <p>Book is on sale! Discount is {{100*book['discount']}}% off;
+                    adjusted price is ${{"%.2f"|format(book['realPrice'])}}</p>
+                    <h4>Total for this item: ${{"%.2f"|format(book['realPrice']*book['quantity'])}}</h4>
+                {% else %}
+                    <p>Price for each is ${{book['price']}}</p>
+                    <h4>Total for this item: ${{book['price']*book['quantity']}}</h4>
+                {% endif %}
             </div>
         </div>
         {% endfor %}

@@ -1,4 +1,4 @@
-from flask import *
+from flask import Flask, render_template, url_for, redirect, session, flash, request, make_response
 from flask_bootstrap import Bootstrap
 from jinja2 import Template
 import sqlite3 as db
@@ -24,10 +24,12 @@ def create_connection():
 
 app = Flask(__name__)
 
+# Immediately redirect from main webpage to homepage.
 @app.route("/")
 def index():
     return redirect(url_for('home'))
 
+# Display site information, navigation, and manager panel if user is logged in as manager.
 @app.route("/home")
 def home():
     if not session.get('user_id'):
@@ -45,6 +47,7 @@ def home():
             flash("Welcome back Manager.")
             return render_template("home.html", manager=True)
 
+# Allow a person to create a user with unique username, email, and their desired password.
 @app.route("/signup", methods = ['POST', 'GET'])
 def signup():
     if request.method == 'POST':
@@ -83,6 +86,7 @@ def signup():
     elif request.method == 'GET':
         return render_template("signup.html")
 
+# Allow users to return to sign in to their account.
 @app.route("/login", methods = ['POST', 'GET'])
 def login():
     if request.method == 'POST':
@@ -123,6 +127,7 @@ def login():
             return resp
         return render_template("login.html")
 
+# Display the top 100 most sold books to the user.
 @app.route("/popular-books")
 def viewPopularBooks():
     conn = create_connection()
@@ -132,7 +137,7 @@ def viewPopularBooks():
     rows = cur.fetchall()
     return render_template("view_popular.html", book_list=rows)
 
-
+# Display the top 100 highest rated books by comments to the user.
 @app.route("/highly-rated-books")
 def viewHighlyRatedBooks():
     conn = create_connection()
@@ -142,6 +147,7 @@ def viewHighlyRatedBooks():
     rows = cur.fetchall()
     return render_template("view_popular.html", book_list=rows)
 
+# Allow users to view a users email and username.
 @app.route("/view-user")
 def viewUser():
     if not request.args.get('userID'):
@@ -157,6 +163,7 @@ def viewUser():
         return redirect(request.referrer)
     return render_template("view_user.html", user=row)
 
+# Allow a user to view detailed information about a given book.
 @app.route("/view-book")
 def viewBook():
     if not request.args.get('bookID'):
@@ -166,7 +173,7 @@ def viewBook():
     conn = create_connection()
     conn.row_factory = db.Row
     cur = conn.cursor()
-    cur.execute("SELECT * FROM Books WHERE Books.id = (?)", (bookID,))
+    cur.execute("SELECT * FROM Books LEFT JOIN RealPrice ON id=book_id WHERE Books.id = (?) ", (bookID,))
     row = cur.fetchone()
     if not row:
         flash("Book not found")
@@ -179,6 +186,7 @@ def viewBook():
         comments = cur.fetchmany(int(request.args.get('numRows')))
     return render_template("view_book.html", book=row, comment_list = comments, author_list = authors)
 
+# Allow a user to view detailed author information, including books they have written, books by 1-degree authors and books by 2-degree authors.
 @app.route("/view-author")
 def viewAuthor():
     if not request.args.get('authorID'):
@@ -192,12 +200,13 @@ def viewAuthor():
     row = cur.fetchone()
     cur.execute("SELECT * FROM AuthorWrites INNER JOIN Books ON AuthorWrites.book_id = Books.id WHERE author_id = (?);", (authorID,))
     booksByAuthor = cur.fetchall()
-    cur.execute("SELECT * FROM Books INNER JOIN (SELECT book_id FROM AuthorWrites INNER JOIN (SELECT co_author_id FROM OneDegreeAuthors WHERE author_id=(?)) AS C ON AuthorWrites.author_id = C.co_author_id WHERE book_id NOT IN (SELECT book_id FROM AuthorWrites WHERE author_id=(?))) ON Books.id = book_id;", (authorID,authorID))
+    cur.execute("SELECT * FROM Books INNER JOIN AuthorWrites ON Books.id=AuthorWrites.book_id INNER JOIN OneDegreeAuthors ON AuthorWrites.author_id=OneDegreeAuthors.author_id WHERE OneDegreeAuthors.co_author_id=(?) AND Books.id NOT IN (SELECT book_id FROM AuthorWrites WHERE author_id=(?));", (authorID,authorID))
     booksBy1DegreeAuthor = cur.fetchall()
-    cur.execute("SELECT * FROM Books INNER JOIN AuthorWrites ON Books.id = book_id INNER JOIN (SELECT B.co_author_id FROM OneDegreeAuthors AS A INNER JOIN OneDegreeAuthors AS B ON A.co_author_id=B.author_id WHERE A.author_id=(?) AND B.co_author_id NOT IN (SELECT co_author_id FROM OneDegreeAuthors WHERE author_id=(?)) AND B.co_author_id!=(?) GROUP BY B.co_author_id) ON author_id=co_author_id;", (authorID, authorID, authorID))
+    cur.execute("SELECT * FROM Books INNER JOIN AuthorWrites ON Books.id=AuthorWrites.book_id INNER JOIN TwoDegreeAuthors ON AuthorWrites.author_id=TwoDegreeAuthors.author_id WHERE TwoDegreeAuthors.co_author_id=(?) AND TwoDegreeAuthors.author_id NOT IN (SELECT co_author_id FROM OneDegreeAuthors WHERE OneDegreeAuthors.author_id=TwoDegreeAuthors.co_author_id) AND Books.id NOT IN (SELECT book_id FROM AuthorWrites WHERE author_id=(?));", (authorID,authorID))
     booksBy2DegreeAuthor = cur.fetchall()
     return render_template("view_author.html", author=row, book_list_author=booksByAuthor, book_list_1degree=booksBy1DegreeAuthor, book_list_2degree=booksBy2DegreeAuthor)
 
+# Allow users to manage and view the items that they currently have in cart before ordering.
 @app.route('/cart', methods = ['POST', 'GET'])
 def cart():
     if not session.get('user_id'):
@@ -222,15 +231,24 @@ def cart():
                     cur.execute("SELECT COUNT(*) as cnt FROM Orders")
                     row = cur.fetchone()
                     orderID = int(row['cnt']) + 1
-                    cur.execute("INSERT INTO Orders (id, ships_to, placed_by) VALUES ((?), (?), (?));", (orderID, addrID, userID))
+                    cur.execute("SELECT * FROM Cart WHERE user_id = (?)", (userID,))
+                    rows = cur.fetchall()
                     cur.execute("SELECT COUNT(*) as cnt FROM OrderItems")
                     row = cur.fetchone()
                     itemID = int(row['cnt']) + 1
-                    cur.execute("SELECT * FROM Cart WHERE user_id = (?)", (userID,))
-                    rows = cur.fetchall()
+                    total = 0
                     for row in rows:
-                        cur.execute("INSERT INTO OrderItems (id, quantity, book_id, order_id) VALUES ((?), (?), (?), (?));", (itemID, row['quantity'], row['book_id'], orderID))
+                        bookID = row['book_id']
+                        cur.execute("SELECT price, realPrice FROM Books INNER JOIN RealPrice ON id=book_id WHERE id=(?);", (bookID,))
+                        book = cur.fetchone()
+                        if book['realPrice']:
+                            total += book['realPrice']
+                        else:
+                            total += book['price']
+                        cur.execute("INSERT INTO OrderItems (id, quantity, book_id, order_id) VALUES ((?), (?), (?), (?));", (itemID, row['quantity'], bookID, orderID))
                         itemID += 1
+                    cur.execute("INSERT INTO Orders (id, total, ships_to, placed_by) VALUES ((?), (?), (?), (?));", (orderID, total, addrID, userID))
+                    cur.execute("DELETE FROM Cart WHERE user_id=(?);", (userID,))
                     conn.commit()
                     flash("Successfully placed order.")
                     return redirect(url_for('home'))
@@ -238,7 +256,7 @@ def cart():
                 flash("Select a valid address.")
                 return redirect(request.referrer)
         else:
-            cur.execute("SELECT * FROM Books INNER JOIN Cart ON Books.id = Cart.book_id WHERE Cart.user_id = (?)", (userID,))
+            cur.execute("SELECT * FROM Books INNER JOIN Cart ON Books.id=Cart.book_id LEFT JOIN RealPrice ON Books.id=RealPrice.book_id WHERE Cart.user_id = (?)", (userID,))
             books = cur.fetchall()
             if not books:
                 flash("No books found in cart.")
@@ -246,14 +264,19 @@ def cart():
             addr = cur.fetchall()
             return render_template('cart.html', book_list = books, addr_list = addr)
 
+# Route to allow order items to be updated in quantity or deleted.
 @app.route('/update-item', methods = ['POST'])
 def updateItem():
     if request.method == 'POST':
         if not request.form.get('bookID') or not request.form.get('quantity'):
             flash("Error updating item.")
-            return redirect(url_for('home'))
+            return redirect(request.referrer)
         bookID = request.form['bookID']
-        quantity = int(request.form['quantity'])
+        try:
+            quantity = int(request.form['quantity'])
+        except:
+            flash("Error - quantity not given.")
+            return redirect(request.referrer)
         if not session.get('user_id'):
             return redirect(url_for('login'))
         userID = session['user_id']
@@ -274,6 +297,7 @@ def updateItem():
         conn.commit()
         return redirect(url_for('cart'))
 
+# Allow users to view and modify the users that they trust or distrust.
 @app.route('/my-trusted-users', methods = ['POST', 'GET'])
 def myTrustedUsers():
     if not session.get('user_id'):
@@ -302,6 +326,7 @@ def myTrustedUsers():
         rows = cur.fetchall()
         return render_template("my_trusted_users.html", user_list = rows)
 
+# Route to allow users to rate a given comment useful or not.
 @app.route('/update-rating', methods = ['POST'])
 def updateRating():
     if not session.get('user_id'):
@@ -331,6 +356,7 @@ def updateRating():
         flash("Rating updated.")
         return redirect(request.referrer)
 
+# Allow the user to search by title, publisher, language, or authors and provide a desired sort.
 @app.route('/search', methods = ['GET'])
 def search():
     if not request.args:
@@ -382,7 +408,7 @@ def search():
         books = cur.fetchmany(numRows)
         return render_template("search.html", book_list = books)
     
-
+# Allow the user to view the placed orders that are connected to them.
 @app.route('/my-orders', methods = ['POST', 'GET'])
 def myOrders():
     if not session.get('user_id'):
@@ -401,6 +427,7 @@ def myOrders():
             print(row['title'])
         return render_template('orders.html', orders = rows)
 
+# Allow users to add and view the addresses that are stored in the system.
 @app.route('/my-addresses', methods = ['POST', 'GET'])
 def myAddresses():
     if not session.get('user_id'):
@@ -438,6 +465,7 @@ def myAddresses():
             addr = cur.fetchall()
             return render_template('addresses.html', addr_list=addr)
 
+# Allow users to view all of the comments that they have made in one location.
 @app.route('/my-comments', methods = ['GET'])
 def myComments():
     if not session.get('user_id'):
@@ -448,12 +476,13 @@ def myComments():
         conn = create_connection()
         conn.row_factory = db.Row
         cur = conn.cursor()
-        cur.execute("SELECT id, first_name, last_name, score, content, Comments.timestamp, avg_rating, Comments.user_id FROM Comments INNER JOIN Customers ON Comments.user_id = Customers.user_id LEFT JOIN (SELECT AVG(Ratings.value) as avg_rating, comment_id FROM Ratings GROUP BY comment_id) ON Comments.id = comment_id WHERE Comments.user_id=(?) ORDER BY avg_rating", (userID,))
+        cur.execute("SELECT id, first_name, last_name, score, content, Comments.timestamp, avg_rating, Comments.user_id, book_id FROM Comments INNER JOIN Customers ON Comments.user_id = Customers.user_id LEFT JOIN (SELECT AVG(Ratings.value) as avg_rating, comment_id FROM Ratings GROUP BY comment_id) ON Comments.id = comment_id WHERE Comments.user_id=(?) ORDER BY avg_rating", (userID,))
         comments = cur.fetchall()
         if not comments:
             flash("No comments found.")
         return render_template('my_comments.html', comment_list=comments)
 
+# Allow users to update their comments.
 @app.route('/update-comment', methods = ['GET', 'POST'])
 def updateComment():
     if not session.get('user_id'):
@@ -502,6 +531,7 @@ def updateComment():
             return render_template('update_comment.html', comment = comment, book = book)
 
 # ACCESS FOR EMPLOYEES ONLY
+# Allow employees to view all orders that have not been fulfilled.
 @app.route('/orders', methods = ['POST'])
 def orders():
     if not session.get('user_id'):
@@ -526,7 +556,7 @@ def orders():
             flash("Viewing unfulfilled Orders")
             return render_template('orders.html', orders = rows)
 
-# Access for managers only.
+# Allow users to update customer information.
 @app.route('/update-customer', methods = ['POST', 'GET'])
 def updateCustomer():
     if not session.get('user_id'):
@@ -562,7 +592,8 @@ def updateCustomer():
             row = cur.fetchone()
             return render_template('update_customer.html', customer = row)
 
-# ACCESS FOR MANAGERS ONLY 
+# ACCESS FOR MANAGERS ONLY
+# Allow managers to pdate a user's email, username or role.
 @app.route('/update-user', methods = ['POST', 'GET'])
 def updateUser():
     if not session.get('user_id'):
@@ -593,7 +624,7 @@ def updateUser():
             row = cur.fetchone()
             return render_template("update_user.html", user=row)
             
-
+# Allow managers to add or update a book, such as the stock level.
 @app.route('/update-book', methods = ['POST', 'GET'])
 def updateBook():
     if not session.get('user_id'):
@@ -626,7 +657,8 @@ def updateBook():
                 return render_template('update_book.html', book = row)
             else:
                 return render_template('update_book.html')
-        
+
+# Allow managers to add new authors to the system.
 @app.route('/update-author', methods = ['POST', 'GET'])
 def updateAuthor():
     if not session.get('user_id'):
@@ -664,6 +696,7 @@ def updateAuthor():
             else:
                 return render_template('update_author.html')
 
+# Route to allow managers to add a book to the given author.
 @app.route('/update-author-writes', methods = ['POST'])
 def updateAuthorWrites():
     if not session.get('user_id'):
@@ -692,6 +725,7 @@ def updateAuthorWrites():
         conn.commit()
         return redirect(url_for('viewBook', bookID=bookID))
 
+# Allow manager to view the users with the highest rated comments.
 @app.route('/get-top-useful', methods = ['GET'])
 def getTopUseful():
     if not session.get('user_id'):
@@ -715,7 +749,7 @@ def getTopUseful():
         customers = cur.fetchmany(numRows)
         return render_template('get_top_useful.html', customer_list = customers)
 
-
+# Allow manager to view users with the greatest amount of trust.
 @app.route('/get-top-trusted', methods = ['GET'])
 def getTopTrusted():
     if not session.get('user_id'):
@@ -739,6 +773,7 @@ def getTopTrusted():
         customers = cur.fetchmany(numRows)
         return render_template('get_top_trusted.html', customer_list = customers)
 
+# Allow manager to view the n most sold books.
 @app.route('/get-popular-books', methods = ['GET'])
 def getPopularBooks():
     if not session.get('user_id'):
@@ -768,6 +803,7 @@ def getPopularBooks():
             print(row['title'])
         return render_template('get_popular_books.html', book_list=rows)
 
+# Allow manager to view the n most sold authors.
 @app.route('/get-popular-authors', methods = ['GET'])
 def getPopularAuthors():
     if not session.get('user_id'):
@@ -795,7 +831,7 @@ def getPopularAuthors():
         rows = cur.fetchmany(numRows)
         return render_template('get_popular_authors.html', author_list=rows)
 
-
+# Allow manager to view the n most sold publishers.
 @app.route('/get-popular-publishers', methods = ['GET'])
 def getPopularPublishers():
     if not session.get('user_id'):
@@ -823,7 +859,7 @@ def getPopularPublishers():
         rows = cur.fetchmany(numRows)
         return render_template('get_popular_publishers.html', publisher_list=rows)
 
-
+# Allow Manager to view sales.
 @app.route('/sales', methods = ['GET'])
 def sales():
     if not session.get('user_id'):
@@ -839,20 +875,81 @@ def sales():
         if not row or row['role'] != "manager":
             flash("You do not have permission for this!")
             return redirect(url_for('login'))
+        cur.execute("SELECT * FROM Sales;")
+        rows = cur.fetchall()
+        return render_template('sales.html', sales_list=rows)
+        
+# Allow manager to update and add a sale.
+@app.route('/update-sale', methods = ['GET', 'POST'])
+def update_sale():
+    if not session.get('user_id'):
+        flash("You must be logged in!")
+        return redirect(url_for('login'))
+    else:
+        userID = session['user_id']
+        conn = create_connection()
+        conn.row_factory = db.Row
+        cur = conn.cursor()
+        cur.execute("SELECT role FROM Users WHERE id=(?)", (userID,))
+        row = cur.fetchone()
+        if not row or row['role'] != "manager":
+            flash("You do not have permission for this!")
+            return redirect(url_for('login'))
         if request.method == 'POST':
-            if not request.args.get('username') or not request.args.get('email') or not request.args.get('userID') or not request.args.get('role'):
-                flash("Error updating user.")
+            if not request.form.get('name') or not request.form.get('discount') or not request.form.get('date_start') or not request.form.get('date_end'):
+                flash("All fields are required!")
+                print(request.form)
+                print(request.form.get('name'), request.form.get('discount'), request.form.get('date_start'), request.form.get('date_end'))
                 return redirect(request.referrer)
-            cur.execute("UPDATE Users SET username=(?), email=(?), role=(?) WHERE id=(?);", (request.args.get('username'),request.args.get('email'),request.args.get('role'),request.args.get('userID')))
+            if request.form.get('sale_id'):
+                cur.execute("UPDATE Sales SET name=(?), discount=(?), date_start=(?), date_end=(?) WHERE id=(?);", (request.form.get('name'), request.form.get('discount'), request.form.get('date_start'), request.form.get('date_end'), request.form.get('sale_id')))
+            else:
+                cur.execute("INSERT INTO Sales (name, discount, date_start, date_end) VALUES ((?), (?), (?), (?));", (request.form.get('name'), request.form.get('discount'), request.form.get('date_start'), request.form.get('date_end')))
             conn.commit()
+            return redirect(url_for('sales'))
+        else:
+            if request.args.get('saleID'):
+                cur.execute("SELECT * FROM Sales WHERE id=(?);", (request.args.get('saleID'),))
+                row = cur.fetchone()
+                cur.execute("SELECT * FROM Books INNER JOIN SalesDiscounts ON Books.id=SalesDiscounts.book_id WHERE sale_id=(?);", (request.args.get('saleID'),))
+                rows = cur.fetchall()
+                return render_template('update_sale.html', sale=row, book_list=rows)
+            else:
+                return render_template('update_sale.html')
+
+@app.route('/update-sale-discounts', methods = ['POST'])
+def update_sale_discounts():
+    if not session.get('user_id'):
+        flash("You must be logged in!")
+        return redirect(url_for('login'))
+    else:
+        userID = session['user_id']
+        conn = create_connection()
+        conn.row_factory = db.Row
+        cur = conn.cursor()
+        cur.execute("SELECT role FROM Users WHERE id=(?)", (userID,))
+        row = cur.fetchone()
+        if not row or row['role'] != "manager":
+            flash("You do not have permission for this!")
+            return redirect(url_for('login'))
+        if not request.form.get('isbn13') or not request.form.get('sale_id'):
+            flash("Error adding book.")
             return redirect(request.referrer)
         else:
-            if not request.args.get('saleID'):
-                flash("Error updating user.")
-                return redirect(request.referrer)
-            cur.execute("SELECT * FROM Users WHERE id=(?)", (request.args.get('userID'),))
+            cur.execute("SELECT * FROM Books WHERE isbn13=(?);", (request.form.get('isbn13'),))
             row = cur.fetchone()
-            return render_template("update_user.html", user=row)
+            if not row:
+                flash("Error adding book.")
+                return redirect(request.referrer)
+            bookID = row['id']
+            cur.execute("SELECT * FROM SalesDiscounts WHERE book_id=(?) AND sale_id=(?);", (bookID, request.form.get('sale_id')))
+            if cur.fetchone():
+                flash("Error adding book.")
+                return redirect(request.referrer)
+            cur.execute("INSERT INTO SalesDiscounts (sale_id, book_id) VALUES ((?), (?));", (request.form.get('sale_id'), bookID))
+            conn.commit()
+            flash("Successfully added book.")
+            return redirect(request.referrer)
 
 @app.route('/discounts', methods = ['GET'])
 def discounts():
@@ -870,6 +967,7 @@ def discounts():
             flash("You do not have permission for this!")
             return redirect(url_for('login'))
 
+# Allow the manager to view manager controls for the system.
 @app.route('/manager-panel', methods = ['GET'])
 def managerPanel():
     if not session.get('user_id'):
