@@ -183,6 +183,7 @@ def generate_all_tables(conn):
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
         total,
         order_quarter INTEGER,
+        year INTEGER,
         time_fulfilled DATETIME DEFAULT NULL,
         fulfilled_by INTEGER DEFAULT NULL,
         ships_to INTEGER,
@@ -214,7 +215,7 @@ def generate_all_tables(conn):
 
     # VIEWS
     sql_create_bookStats_view = """ CREATE VIEW IF NOT EXISTS BookStats AS 
-        SELECT Books.id, isbn13, Books.price, sum(quantity) as copies_sold, publisher, order_quarter FROM OrderItems, Orders, Books WHERE OrderItems.book_id = Books.id AND OrderItems.order_id = Orders.id GROUP BY Books.id
+        SELECT Books.id, isbn13, Books.price, sum(quantity) as copies_sold, publisher, order_quarter, year FROM OrderItems, Orders, Books WHERE OrderItems.book_id = Books.id AND OrderItems.order_id = Orders.id GROUP BY Books.id
     """
     create_table(conn, sql_create_bookStats_view)
 

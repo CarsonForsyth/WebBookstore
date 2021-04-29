@@ -4,7 +4,7 @@
     <h1>Most Popular Publishers</h1>
         {% for publisher in publisher_list %}
         <div class="row"><h4>
-            {{publisher['publisher']}} sold {{publisher['copies_sold']}} in quarter {{publisher['order_quarter']}}
+            {{publisher['publisher']}} sold {{publisher['copies_sold']}}, quarter {{publisher['order_quarter']}} in {{publisher['year']}}
         </h4></div>
     {% endfor %}
 </body>

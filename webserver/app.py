@@ -5,6 +5,7 @@ import sqlite3 as db
 import os
 import hashlib
 from time import strftime
+from datetime import datetime
 from sqlite3 import Error
 
 
@@ -174,17 +175,23 @@ def viewBook():
     conn.row_factory = db.Row
     cur = conn.cursor()
     cur.execute("SELECT * FROM Books LEFT JOIN RealPrice ON id=book_id WHERE Books.id = (?) ", (bookID,))
-    row = cur.fetchone()
-    if not row:
+    book = cur.fetchone()
+    if not book:
         flash("Book not found")
         return redirect(request.referrer)
+    cur.execute("SELECT AVG(score) AS rating FROM Comments WHERE book_id=(?);", (bookID,))
+    row = cur.fetchone()
+    if row:
+        rating = row['rating']
+    else:
+        rating = 0
     cur.execute("SELECT * FROM AuthorWrites INNER JOIN Authors ON Authors.id = author_id WHERE book_id = (?)", (bookID,))
     authors = cur.fetchall()
     comments = None
     if request.args.get('numRows'):
         cur.execute("SELECT id, first_name, last_name, score, content, Comments.timestamp, avg_rating, Comments.user_id FROM Comments INNER JOIN Customers ON Comments.user_id = Customers.user_id LEFT JOIN (SELECT AVG(Ratings.value) as avg_rating, comment_id FROM Ratings GROUP BY comment_id) ON Comments.id = comment_id WHERE book_id=(?) ORDER BY avg_rating DESC", (bookID,))
         comments = cur.fetchmany(int(request.args.get('numRows')))
-    return render_template("view_book.html", book=row, comment_list = comments, author_list = authors)
+    return render_template("view_book.html", book=book, comment_list = comments, author_list = authors, rating=rating)
 
 # Allow a user to view detailed author information, including books they have written, books by 1-degree authors and books by 2-degree authors.
 @app.route("/view-author")
@@ -239,15 +246,13 @@ def cart():
                     total = 0
                     for row in rows:
                         bookID = row['book_id']
-                        cur.execute("SELECT price, realPrice FROM Books INNER JOIN RealPrice ON id=book_id WHERE id=(?);", (bookID,))
+                        cur.execute("SELECT Case WHEN realPrice IS NULL THEN price ELSE realPrice END AS realPrice FROM Books LEFT JOIN RealPrice ON id=book_id WHERE id=(?);", (bookID,))
                         book = cur.fetchone()
-                        if book['realPrice']:
-                            total += book['realPrice']
-                        else:
-                            total += book['price']
+                        total += book['realPrice']
                         cur.execute("INSERT INTO OrderItems (id, quantity, book_id, order_id) VALUES ((?), (?), (?), (?));", (itemID, row['quantity'], bookID, orderID))
                         itemID += 1
-                    cur.execute("INSERT INTO Orders (id, total, ships_to, placed_by) VALUES ((?), (?), (?), (?));", (orderID, total, addrID, userID))
+                    today = datetime.today()
+                    cur.execute("INSERT INTO Orders (id, total, ships_to, placed_by, order_quarter, year) VALUES ((?), (?), (?), (?), (?), (?));", (orderID, total, addrID, userID, int(today.month/4), today.year))
                     cur.execute("DELETE FROM Cart WHERE user_id=(?);", (userID,))
                     conn.commit()
                     flash("Successfully placed order.")
@@ -557,7 +562,27 @@ def orders():
             return render_template('orders.html', orders = rows)
 
 # Allow users to update customer information.
-@app.route('/update-customer', methods = ['POST', 'GET'])
+@app.route('/my-information', methods = ['GET'])
+def myInformation():
+    if not session.get('user_id'):
+        flash("You must be logged in!")
+        return redirect(url_for('login'))
+    else:
+        userID = session['user_id']
+        conn = create_connection()
+        conn.row_factory = db.Row
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM Users WHERE id = (?)", (userID,))
+        row = cur.fetchone()
+        if row is None:
+            flash("You must be logged in!")
+            return redirect(url_for('login'))
+        cur.execute("SELECT * FROM Customers WHERE user_id = (?);", (userID,))
+        row = cur.fetchone()
+        return render_template('my_information.html', customer = row)
+
+# Allow users to update customer information.
+@app.route('/update-customer', methods = ['POST'])
 def updateCustomer():
     if not session.get('user_id'):
         flash("You must be logged in!")
@@ -572,25 +597,48 @@ def updateCustomer():
         if row is None:
             flash("You must be logged in!")
             return redirect(url_for('login'))
-        if request.method == 'POST':
-            if not request.form.get('phone') or not request.form.get('first_name') or not request.form.get('last_name'):
-                flash("All fields required.")
-                return redirect(url_for('update_customer'))
-            cur.execute("SELECT * FROM Customers WHERE user_id = (?)", (userID,))
-            row = cur.fetchone()
-            if row is None:
-                cur.execute("INSERT INTO Customers (user_id, phone, first_name, last_name) VALUES((?), (?), (?), (?))", (userID, request.form['phone'], request.form['first_name'], request.form['last_name']))
-            else:
-                cur.execute("UPDATE Customers SET phone=(?), first_name=(?), last_name=(?) WHERE user_id = (?)", (request.form['phone'], request.form['first_name'], request.form['last_name'], userID))
-            conn.commit()
-            cur.execute("SELECT * FROM Customers WHERE user_id = (?);", (userID,))
-            row = cur.fetchone()
-            flash("Successfully updated your information.")
-            return render_template('update_customer.html', customer = row)
+        if not request.form.get('phone') or not request.form.get('first_name') or not request.form.get('last_name'):
+            flash("All fields required.")
+            return redirect(url_for('update_customer'))
+        cur.execute("SELECT * FROM Customers WHERE user_id = (?)", (userID,))
+        row = cur.fetchone()
+        if row is None:
+            cur.execute("INSERT INTO Customers (user_id, phone, first_name, last_name) VALUES((?), (?), (?), (?))", (userID, request.form['phone'], request.form['first_name'], request.form['last_name']))
         else:
-            cur.execute("SELECT * FROM Customers WHERE user_id = (?);", (userID,))
-            row = cur.fetchone()
-            return render_template('update_customer.html', customer = row)
+            cur.execute("UPDATE Customers SET phone=(?), first_name=(?), last_name=(?) WHERE user_id = (?)", (request.form['phone'], request.form['first_name'], request.form['last_name'], userID))
+        conn.commit()
+        flash("Successfully updated your information.")
+        return redirect(url_for('myInformation'))
+
+# Allow User to delete account.
+@app.route('/delete-account', methods = ['POST'])
+def deleteAccount():
+    if not session.get('user_id'):
+        flash("You must be logged in!")
+        return redirect(url_for('login'))
+    else:
+        userID = session['user_id']
+        conn = create_connection()
+        conn.row_factory = db.Row
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM Users WHERE id = (?)", (userID,))
+        row = cur.fetchone()
+        if row is None:
+            flash("You must be logged in!")
+            return redirect(url_for('login'))
+        cur.execute("SELECT * FROM Orders WHERE id = (?)", (userID,))
+        rows = cur.fetchall()
+        if rows:
+            flash("Orders have not been fulfilled. Once shipped account may be deleted!")
+            return redirect(request.referrer)
+        cur.execute("DELETE FROM Customers WHERE user_id=(?);", (userID,))
+        cur.execute("DELETE FROM Users WHERE id=(?);", (userID,))
+        conn.commit()
+        session.pop('user_id', None)
+        session.pop('role', None)
+        return redirect(url_for('home')) 
+
+        
 
 # ACCESS FOR MANAGERS ONLY
 # Allow managers to pdate a user's email, username or role.
@@ -797,7 +845,11 @@ def getPopularBooks():
             quarter = 0
         else:
             quarter = int(request.args['quarter'])
-        cur.execute("SELECT * FROM BookStats INNER JOIN Books ON BookStats.id=Books.id WHERE order_quarter=(?) ORDER BY copies_sold DESC", (quarter,))
+        if not request.args.get('year'):
+            year = 2021
+        else:
+            year = int(request.args['year'])
+        cur.execute("SELECT * FROM BookStats INNER JOIN Books ON BookStats.id=Books.id WHERE order_quarter=(?) AND year=(?) ORDER BY copies_sold DESC", (quarter,year))
         rows = cur.fetchmany(numRows)
         for row in rows:
             print(row['title'])
@@ -827,7 +879,11 @@ def getPopularAuthors():
             quarter = 0
         else:
             quarter = int(request.args['quarter'])
-        cur.execute("SELECT Authors.id, name, SUM(copies_sold) AS copies_sold, order_quarter FROM BookStats INNER JOIN Books ON BookStats.id=Books.id INNER JOIN AuthorWrites ON Books.id=AuthorWrites.book_id INNER JOIN Authors ON AuthorWrites.author_id=Authors.id WHERE order_quarter=(?) GROUP BY name ORDER BY SUM(copies_sold) DESC", (quarter,))
+        if not request.args.get('year'):
+            year = 2021
+        else:
+            year = int(request.args['year'])
+        cur.execute("SELECT Authors.id, name, SUM(copies_sold) AS copies_sold, order_quarter, year FROM BookStats INNER JOIN Books ON BookStats.id=Books.id INNER JOIN AuthorWrites ON Books.id=AuthorWrites.book_id INNER JOIN Authors ON AuthorWrites.author_id=Authors.id WHERE order_quarter=(?) AND year=(?) GROUP BY name ORDER BY SUM(copies_sold) DESC", (quarter, year))
         rows = cur.fetchmany(numRows)
         return render_template('get_popular_authors.html', author_list=rows)
 
@@ -855,7 +911,11 @@ def getPopularPublishers():
             quarter = 0
         else:
             quarter = int(request.args['quarter'])
-        cur.execute("SELECT Books.publisher, SUM(copies_sold) AS copies_sold, order_quarter FROM BookStats INNER JOIN Books ON BookStats.id=Books.id WHERE order_quarter=(?) GROUP BY BookStats.publisher ORDER BY SUM(copies_sold) DESC", (quarter,))
+        if not request.args.get('year'):
+            year = 2021
+        else:
+            year = int(request.args['year'])
+        cur.execute("SELECT Books.publisher, SUM(copies_sold) AS copies_sold, order_quarter, year FROM BookStats INNER JOIN Books ON BookStats.id=Books.id WHERE order_quarter=(?) AND year=(?) GROUP BY BookStats.publisher ORDER BY SUM(copies_sold) DESC", (quarter, year))
         rows = cur.fetchmany(numRows)
         return render_template('get_popular_publishers.html', publisher_list=rows)
 
@@ -951,8 +1011,9 @@ def update_sale_discounts():
             flash("Successfully added book.")
             return redirect(request.referrer)
 
-@app.route('/discounts', methods = ['GET'])
-def discounts():
+# Allow manager to view the n most sold books.
+@app.route('/get-low-stock', methods = ['GET'])
+def getLowStock():
     if not session.get('user_id'):
         flash("You must be logged in!")
         return redirect(url_for('login'))
@@ -966,6 +1027,13 @@ def discounts():
         if not row or row['role'] != "manager":
             flash("You do not have permission for this!")
             return redirect(url_for('login'))
+        if not request.args.get('num_rows'):
+            numRows = 10
+        else:
+            numRows = int(request.args['num_rows'])
+        cur.execute("SELECT * FROM Books ORDER BY stock asc;")
+        rows = cur.fetchmany(numRows)
+        return render_template('get_low_stock.html', book_list=rows)
 
 # Allow the manager to view manager controls for the system.
 @app.route('/manager-panel', methods = ['GET'])

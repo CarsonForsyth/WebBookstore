@@ -6,17 +6,20 @@
             <h1>{{book['title']}}</h1>
         </div>
         <div class="row">
-            <div class="col-sm-6">
+            <div class="col-sm-4">
                 <h5>By: 
                     {% for author in author_list %}
                         <a href="/view-author?authorID={{author['id']}}" class="link-primary">{{author['name']}}</a><br>
                     {% endfor %}
                 </h5>
             </div>
+            <div class="col-sm-2">
+                Overall rating is <b>{{"%.1f"|format(rating)}}</b>
+            </div>
             <div class="col-sm-4">
-                <p>{{book['stock']}} in stock at ${{book['price']}}:
+                <p>{{book['stock']}} in stock at ${{book['price']}}
                 {% if book['discount'] %}
-                    Book is on sale! Discount is {{100*book['discount']}}% off;
+                     | Book is on sale! <br>Discount is {{100*book['discount']}}% off;
                     adjusted price is ${{"%.2f"|format(book['realPrice'])}}
                 {% endif %}
             </p>
@@ -44,7 +47,7 @@
                 </tr>
                 <tr>
                     <td>Publish Date</td>
-                    <td>{{book['pub_date']}}</td>
+                    <td>{{book['pub_date'].split(" ")[0]}}</td>
                 </tr>
                 <tr>
                     <td>Language</td>
@@ -76,6 +79,7 @@
             <input type="text" class="form-control" name="content">
         </div>
         <input type="hidden" value="{{book['id']}}" name='book_id'>
+        <br>
         <div class="d-grid gap-2">
             <button type="submit" class="btn btn-dark">Leave comment</button>
         </div>
@@ -88,6 +92,7 @@
             <label for="numRows">Number of Comments to View</label>
             <input type="number" class="form-control" name="numRows" value="5">
         </div>
+        <br>
         <div class="d-grid gap-2">
             <button type="submit" class="btn btn-dark button">Get Comments</button>
         </div>

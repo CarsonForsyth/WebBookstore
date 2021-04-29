@@ -1,0 +1,73 @@
+{% extends "navigation.html" %}
+{% block content %}
+<body>
+    {% if customer %}
+        <h1>Update your information</h1>
+        <form action="/update-customer" method="POST">
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" class="form-control" name="phone" value="{{customer['phone']}}">
+            </div>
+            <div class="form-group">
+                <label for="first_name">First Name</label>
+                <input type="text" class="form-control" name="first_name" value="{{customer['first_name']}}">
+            </div>
+            <div class="form-group">
+                <label for="last_name">Last Name</label>
+                <input type="text" class="form-control" name="last_name" value="{{customer['last_name']}}">
+            </div>
+            <br>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-dark">Update Information</button>
+            </div>
+        </form>
+    {% else %}
+        <h1>Register as a customer: </h1>
+        <form action="/update-customer" method="POST">
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" class="form-control" name="phone">
+            </div>
+            <div class="form-group">
+                <label for="first_name">First Name</label>
+                <input type="text" class="form-control" name="first_name">
+            </div>
+            <div class="form-group">
+                <label for="last_name">Last Name</label>
+                <input type="text" class="form-control" name="last_name">
+            </div>
+            <br>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-dark">Submit Information</button>
+            </div>
+        </form>
+    {% endif %}
+    <br>
+    <!-- FROM BOOTSTRAP 5.0 DOCUMENTATION, https://getbootstrap.com/docs/5.0/components/modal/ -->
+    <!-- Button trigger modal -->
+    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#delete">
+      Delete Account
+    </button>
+
+    <!-- Modal -->
+    <div class="modal fade" id="delete" tabindex="-1" aria-labelledby="deleteLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="deleteLabel">Confirm Action</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            Only allowed if all orders have been processed. Action cannot be undone.
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <form action="delete-account" method="POST">
+              <button type="submit" class="btn btn-danger">Delete Account</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+</body>
+{% endblock %}

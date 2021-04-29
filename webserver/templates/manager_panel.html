@@ -12,6 +12,7 @@
           <label for="num_rows">Number of Customers to Fetch</label>
           <input type="number" class="form-control" name="num_rows" value="10">
       </div>
+      <br>
       <div class="d-grid gap-2">
           <button type="submit" class="btn btn-dark">Get Customers</button>
       </div>
@@ -22,6 +23,7 @@
           <label for="num_rows">Number of Customers to Fetch</label>
           <input type="number" class="form-control" name="num_rows" value="10">
       </div>
+      <br>
       <div class="d-grid gap-2">
           <button type="submit" class="btn btn-dark">Get Customers</button>
       </div>
@@ -29,15 +31,35 @@
     <h2>View Book Statistics</h2>
     <form action="/" method="GET">
       <div class="form-group">
+        <label for="quarter">Quarter for Stats</label>
+        <input type="number" min="0" class="form-control" name="quarter">
+      </div>
+      <div class="form-group">
+        <label for="year">Year for Stats</label>
+        <input type="number" min="2021" class="form-control" name="year">
+      </div>
+      <div class="form-group">
           <label for="num_rows">Number of Books to Fetch</label>
           <input type="number" class="form-control" name="num_rows" value="10">
       </div>
+      <br>
       <div class="d-grid gap-2">
         <div class="btn-group" role="group" aria-label="Basic example">
           <button type="submit" class="btn btn-dark" formaction="get-popular-books">By Book</button>
           <button type="submit" class="btn btn-dark" formaction="get-popular-authors">By Author</button>
           <button type="submit" class="btn btn-dark" formaction="get-popular-publishers">By Publisher</button>
         </div>
+      </div>
+    </form>
+    <h2>View Low Stock Items</h2>
+    <form action="/get-low-stock" method="GET">
+      <div class="form-group">
+          <label for="num_rows">Number of Books to Fetch</label>
+          <input type="number" class="form-control" name="num_rows" value="10">
+      </div>
+      <br>
+      <div class="d-grid gap-2">
+          <button type="submit" class="btn btn-dark">Get Books</button>
       </div>
     </form>
 </body>
