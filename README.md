@@ -6,8 +6,10 @@ Also, it should include where to find and how to use each of your functionalitie
 This webapp is written for CMPSC 431W @ psu with Dong Xie for Spring 2021
 This app uses Flask on Python with a SQLite Database to run a Bootstrap Frontend.
 
+Packages Required for main app: "flask", "flask_bootstrap", "jinja2"
+
 To use the webapp:
-1. Download the master
+1. Download the master and required packages
 2. Navigate to /webserver
 3. Run app.py with Python3
 4. Runs on http://127.0.0.1:5000/ by default
