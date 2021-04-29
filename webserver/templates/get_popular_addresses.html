@@ -1,0 +1,30 @@
+{% extends "navigation.html" %}
+{% block content %}
+<body>
+    <h1>Top Locations Shipped to </h1>
+    <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">City</th>
+            <th scope="col">State / Region</th>
+            <th scope="col">Country</th>
+            <th scope="col">Quarter</th>
+            <th scope="col">Year</th>
+            <th scope="col">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for address in address_list %}
+          <tr>
+            <td>{{address['city']}}</td>
+            <td>{{address['region']}}</td>
+            <td>{{address['country']}}</td>
+            <td>{{address['order_quarter']}}</td>
+            <td>{{address['year']}}</td>
+            <td>${{"%.2f"|format(address['total'])}}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+</body>
+{% endblock %}

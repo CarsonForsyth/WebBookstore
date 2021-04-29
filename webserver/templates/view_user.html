@@ -21,5 +21,59 @@
         <a class="btn btn-dark button" href="/update-user?userID={{user['id']}}" role="button">Update this User</a>   
     </div> 
     {% endif %}
+    {% if comment_list %}
+    <h2>Comments</h2>
+        {% for comment in comment_list %}
+        <div class="row">
+            <div class="col-sm-8">
+                {% include "comment_card.html" %}
+            </div>
+            <div class="col-sm-4">
+                <a href="/view-book?bookID={{comment['book_id']}}" class="link-primary">View Book</a>
+                {% if comment['user_id'] != session.get('user_id') %}
+                <h6>Rate this comment </h6>
+                <form action="/update-rating" method="POST">
+                    <input type="hidden" value="{{comment['id']}}" name="comment_id">
+                    <input type="hidden" value="1" name="value"><div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-outline-secondary btn-sm">Very Useful</button>
+                    </div>
+                </form>
+                <form action="/update-rating" method="POST">
+                    <input type="hidden" value="{{comment['id']}}" name="comment_id">
+                    <input type="hidden" value="0" name="value"><div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-outline-secondary btn-sm">Useful</button>
+                    </div>
+                </form>
+                <form action="/update-rating" method="POST">
+                    <input type="hidden" value="{{comment['id']}}" name="comment_id">
+                    <input type="hidden" value="-1" name="value"><div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-outline-secondary btn-sm">Not Useful</button>
+                    </div>
+                </form>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <form action="/my-trusted-users" method="POST">
+                            <input type="hidden" value="{{comment['user_id']}}" name="user_id">
+                            <input type="hidden" value="1" name="value">
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-outline-secondary btn-sm">Trust user</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="col-sm-6">
+                        <form action="/my-trusted-users" method="POST">
+                            <input type="hidden" value="{{comment['user_id']}}" name="user_id">
+                            <input type="hidden" value="-1" name="value">
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-outline-secondary btn-sm">Distrust user</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    {% endif %}
 </body>
 {% endblock %}

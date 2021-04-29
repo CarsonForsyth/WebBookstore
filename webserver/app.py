@@ -162,7 +162,9 @@ def viewUser():
     if not row:
         flash("No user found.")
         return redirect(request.referrer)
-    return render_template("view_user.html", user=row)
+    cur.execute("SELECT * FROM Comments INNER JOIN Customers ON Comments.user_id=Customers.user_id WHERE Comments.user_id=(?);", (request.args['userID'],))
+    comments = cur.fetchall()
+    return render_template("view_user.html", user=row, comment_list=comments)
 
 # Allow a user to view detailed information about a given book.
 @app.route("/view-book")
@@ -189,7 +191,11 @@ def viewBook():
     authors = cur.fetchall()
     comments = None
     if request.args.get('numRows'):
-        cur.execute("SELECT id, first_name, last_name, score, content, Comments.timestamp, avg_rating, Comments.user_id FROM Comments INNER JOIN Customers ON Comments.user_id = Customers.user_id LEFT JOIN (SELECT AVG(Ratings.value) as avg_rating, comment_id FROM Ratings GROUP BY comment_id) ON Comments.id = comment_id WHERE book_id=(?) ORDER BY avg_rating DESC", (bookID,))
+        if not session.get('user_id'):
+            cur.execute("SELECT id, first_name, last_name, score, content, Comments.timestamp, avg_rating, Comments.user_id FROM Comments INNER JOIN Customers ON Comments.user_id = Customers.user_id INNER JOIN TrustedUsers ON Customers.user_id=TrustedUsers.user_id LEFT JOIN (SELECT AVG(Ratings.value) as avg_rating, comment_id FROM Ratings GROUP BY comment_id) ON Comments.id = comment_id WHERE book_id=(?) ORDER BY avg_rating DESC", (bookID,))
+        else:
+            userID = session['user_id']
+            cur.execute("SELECT id, first_name, last_name, score, content, Comments.timestamp, avg_rating, Comments.user_id FROM Comments INNER JOIN Customers ON Comments.user_id = Customers.user_id INNER JOIN TrustedUsers ON Customers.user_id=TrustedUsers.user_id LEFT JOIN (SELECT AVG(Ratings.value) as avg_rating, comment_id FROM Ratings GROUP BY comment_id) ON Comments.id = comment_id WHERE book_id=(?) AND Comments.user_id NOT IN (SELECT trusts FROM Trusts WHERE value<0 AND user_id=(?)) ORDER BY avg_rating DESC", (bookID,userID))
         comments = cur.fetchmany(int(request.args.get('numRows')))
     return render_template("view_book.html", book=book, comment_list = comments, author_list = authors, rating=rating)
 
@@ -327,7 +333,7 @@ def myTrustedUsers():
                 conn.commit()
                 flash("Successfully modified trust.")
                 return redirect(request.referrer)
-        cur.execute("SELECT value, username FROM Trusts INNER JOIN Users ON Trusts.trusts = Users.id WHERE Trusts.user_id = (?)", (userID,))
+        cur.execute("SELECT value, username, Users.id FROM Trusts INNER JOIN Users ON Trusts.trusts = Users.id WHERE Trusts.user_id = (?)", (userID,))
         rows = cur.fetchall()
         return render_template("my_trusted_users.html", user_list = rows)
 
@@ -506,7 +512,7 @@ def updateComment():
             row = cur.fetchone()
             if not row:
                 flash("You must be registered as a customer!")
-                return redirect(url_for('updateCustomer'))
+                return redirect(url_for('myInformation'))
             score = request.form['score']
             bookID = request.form['book_id']
             if not request.form.get('comment_id'):
@@ -599,7 +605,7 @@ def updateCustomer():
             return redirect(url_for('login'))
         if not request.form.get('phone') or not request.form.get('first_name') or not request.form.get('last_name'):
             flash("All fields required.")
-            return redirect(url_for('update_customer'))
+            return redirect(url_for('updateCustomer'))
         cur.execute("SELECT * FROM Customers WHERE user_id = (?)", (userID,))
         row = cur.fetchone()
         if row is None:
@@ -633,12 +639,15 @@ def deleteAccount():
             return redirect(request.referrer)
         cur.execute("DELETE FROM Customers WHERE user_id=(?);", (userID,))
         cur.execute("DELETE FROM Users WHERE id=(?);", (userID,))
+        cur.execute("DELETE FROM Trusts WHERE user_id=(?);", (userID,))
+        cur.execute("DELETE FROM Addresses WHERE user_id=(?);", (userID,))
+        cur.execute("DELETE FROM Comments WHERE user_id=(?);", (userID,))
+        cur.execute("DELETE FROM Cart WHERE user_id=(?);", (userID,))
+        cur.execute("DELETE FROM Ratings WHERE user_id=(?);", (userID,))
         conn.commit()
         session.pop('user_id', None)
         session.pop('role', None)
-        return redirect(url_for('home')) 
-
-        
+        return redirect(url_for('home'))
 
 # ACCESS FOR MANAGERS ONLY
 # Allow managers to pdate a user's email, username or role.
@@ -821,6 +830,38 @@ def getTopTrusted():
         customers = cur.fetchmany(numRows)
         return render_template('get_top_trusted.html', customer_list = customers)
 
+# Allow manager to view stats based on shiiping location.
+@app.route('/get-popular-addresses', methods = ['GET'])
+def getPopularAddresses():
+    if not session.get('user_id'):
+        flash("You must be logged in!")
+        return redirect(url_for('login'))
+    else:
+        userID = session['user_id']
+        conn = create_connection()
+        conn.row_factory = db.Row
+        cur = conn.cursor()
+        cur.execute("SELECT role FROM Users WHERE id=(?)", (userID,))
+        row = cur.fetchone()
+        if not row or row['role'] != "manager":
+            flash("You do not have permission for this!")
+            return redirect(url_for('login'))
+        if not request.args.get('num_rows'):
+            numRows = 10
+        else:
+            numRows = int(request.args['num_rows'])
+        if not request.args.get('quarter'):
+            quarter = 0
+        else:
+            quarter = int(request.args['quarter'])
+        if not request.args.get('year'):
+            year = 2021
+        else:
+            year = int(request.args['year'])
+        cur.execute("SELECT * FROM AddressOrderStats WHERE order_quarter=(?) AND year=(?) ORDER BY total DESC", (quarter,year))
+        rows = cur.fetchmany(numRows)
+        return render_template('get_popular_addresses.html', address_list=rows)
+
 # Allow manager to view the n most sold books.
 @app.route('/get-popular-books', methods = ['GET'])
 def getPopularBooks():
@@ -851,8 +892,6 @@ def getPopularBooks():
             year = int(request.args['year'])
         cur.execute("SELECT * FROM BookStats INNER JOIN Books ON BookStats.id=Books.id WHERE order_quarter=(?) AND year=(?) ORDER BY copies_sold DESC", (quarter,year))
         rows = cur.fetchmany(numRows)
-        for row in rows:
-            print(row['title'])
         return render_template('get_popular_books.html', book_list=rows)
 
 # Allow manager to view the n most sold authors.
@@ -977,6 +1016,7 @@ def update_sale():
             else:
                 return render_template('update_sale.html')
 
+# Route to add a book to a sale.
 @app.route('/update-sale-discounts', methods = ['POST'])
 def update_sale_discounts():
     if not session.get('user_id'):
@@ -1052,6 +1092,26 @@ def managerPanel():
             flash("You do not have permission for this!")
             return redirect(url_for('login'))
         return render_template('manager_panel.html')
+
+    # Allow manager to view stats based on shiiping location.
+@app.route('/get-users', methods = ['GET'])
+def getUsers():
+    if not session.get('user_id'):
+        flash("You must be logged in!")
+        return redirect(url_for('login'))
+    else:
+        userID = session['user_id']
+        conn = create_connection()
+        conn.row_factory = db.Row
+        cur = conn.cursor()
+        cur.execute("SELECT role FROM Users WHERE id=(?)", (userID,))
+        row = cur.fetchone()
+        if not row or row['role'] != "manager":
+            flash("You do not have permission for this!")
+            return redirect(url_for('login'))
+        cur.execute("SELECT * FROM Users LEFT JOIN Customers ON Users.id=Customers.user_id")
+        rows = cur.fetchall()
+        return render_template('get_users.html', user_list=rows)
 
 if __name__ == "__main__":
     app.secret_key = 'SECRETKEYDONTLOSE'

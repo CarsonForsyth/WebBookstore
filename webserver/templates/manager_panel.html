@@ -2,10 +2,33 @@
 {% block content %}
 <body>
     <h1>Manager Functions</h1>
-    <h2>View Sales</h2>
+    <h2>View Discounting Sales</h2>
     <div class="d-grid gap-2">
-      <a class="btn btn-dark btn" href="/sales" role="button">Sales</a>
+      <a class="btn btn-dark btn" href="/sales" role="button">Get Sales</a>
     </div>
+    <h2>View Users</h2>
+    <div class="d-grid gap-2">
+      <a class="btn btn-dark btn" href="/get-users" role="button">Get Users</a>
+    </div>
+    <h2>View Product Sales by Location</h2>
+    <form action="/get-popular-addresses" method="GET">
+      <div class="form-group">
+        <label for="quarter">Quarter for Stats</label>
+        <input type="number" min="0" class="form-control" name="quarter">
+      </div>
+      <div class="form-group">
+        <label for="year">Year for Stats</label>
+        <input type="number" min="2021" class="form-control" name="year">
+      </div>
+      <div class="form-group">
+          <label for="num_rows">Number of Books to Fetch</label>
+          <input type="number" class="form-control" name="num_rows" value="10">
+      </div>
+      <br>
+      <div class="d-grid gap-2">
+          <button type="submit" class="btn btn-dark">Get Stats</button>
+      </div>
+    </form>
     <h2>View Most Useful Customers</h2>
     <form action="/get-top-useful" method="GET">
       <div class="form-group">

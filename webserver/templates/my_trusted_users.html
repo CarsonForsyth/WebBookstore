@@ -7,6 +7,8 @@
           <tr>
             <th scope="col">Username</th>
             <th scope="col">Status</th>
+            <th scope="col">Modify</th>
+            <th scope="col">User</th>
           </tr>
         </thead>
         <tbody>
@@ -18,6 +20,29 @@
                 {% else %}
                     <td>Distrusted</td>
                 {% endif %}
+                <td>
+                  <div class="row">
+                    <div class="col-sm-3">
+                        <form action="/my-trusted-users" method="POST">
+                            <input type="hidden" value="{{user['id']}}" name="user_id">
+                            <input type="hidden" value="1" name="value">
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-outline-secondary btn-sm">Trust user</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="col-sm-3">
+                        <form action="/my-trusted-users" method="POST">
+                            <input type="hidden" value="{{user['id']}}" name="user_id">
+                            <input type="hidden" value="-1" name="value">
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-outline-secondary btn-sm">Distrust user</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                </td>
+                <td><a href="/view-user?userID={{user['id']}}" class="link-primary">View User</a></td>
             </tr>
           {% endfor %}
         </tbody>
