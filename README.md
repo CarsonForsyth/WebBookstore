@@ -52,7 +52,7 @@ Click "Order Now" to add the book to your cart.
 Under Add a Comment:  
 - Users can leave a rating and an optional review of the current book if they have not done so already.  
 Under View Comments:  
-- User can select number of comments to fetch, and only those by users with positive trust rating and not distrusted by user will be displayed.  
+- User can select number of comments to fetch, and comment with negative trust rating and or distrusted by user will be hidden.  
 - User can rate each comment as "Very Useful", "Useful", or "Not Useful" using buttons.  
 - User can trust the commentor based off of comment using "Trust" or "Distrust" button.  
   
@@ -72,26 +72,26 @@ While logged in and viewing a book, Manager has access to "Update this Book". Cl
 On the homepage their will be a new button, "Manager Panel". Click this to access manager page.  
 On manager page:  
 - Click "Add a Book" to be taken to add book page:  
->Manager can create a new book entry here by filling out each field and submitting with "Add Book" button.  
+ - Manager can create a new book entry here by filling out each field and submitting with "Add Book" button.  
 - Click "Get Sales" to view sales page: 
->Manager may view all sales. 
->Click "Create a Sale" to access create sale page:  
-+Manager can fill out name, discount, and dates of sale.  
->Click on a sale hyperlink to update the sale:  
-+Add books to be discounted by putting in ISBN13 and clicking "Add Book" button.  
+ - Manager may view all sales. 
+ - Click "Create a Sale" to access create sale page:  
+  - Manager can fill out name, discount, and dates of sale.  
+ - Click on a sale hyperlink to update the sale:  
+  - Add books to be discounted by putting in ISBN13 and clicking "Add Book" button.  
 - Click "Get Users" to view every user in the system and their information.  
->Click "Update this User" to change email, username, or role of the user. This is how original manager may create more managers.  
+ - Click "Update this User" to change email, username, or role of the user. This is how original manager may create more managers.  
 - Under "View Product Sales by Location":  
->Fill quarter, year, and number of cities to fetch, then click "Get Stats" to fetch the cities that have been shipped to the most.  
+ - Fill quarter, year, and number of cities to fetch, then click "Get Stats" to fetch the cities that have been shipped to the most.  
 - Under "View Most Useful Customers":  
->Fill number of customers then click "Get Customers" to fetch the selected number of users with the highest rated comments.  
+ - Fill number of customers then click "Get Customers" to fetch the selected number of users with the highest rated comments.  
 - Under "View Most Trusted Customers":  
->Fill number of customers then click "Get Customers" to fetch the users sorted by the highest number of trusts.  
+ - Fill number of customers then click "Get Customers" to fetch the users sorted by the highest number of trusts.  
 - Under "View Book Statistics"  
->Fill quarter, year, and number of cities to fetch, then to retrieve statistics click:  
-+"By Book" for the most ordered books.  
-+"By Author" for the most ordered authors.  
-+"By Publisher" for the most ordered publishers.  
+ - Fill quarter, year, and number of cities to fetch, then to retrieve statistics click:  
+  - "By Book" for the most ordered books.  
+  - "By Author" for the most ordered authors.  
+  - "By Publisher" for the most ordered publishers.  
 - Under "View Low Stock Items":  
->Fill number of books to fetch, then click "Get Books" to display the given number of books with the lowest stock in the store.  
+ - Fill number of books to fetch, then click "Get Books" to display the given number of books with the lowest stock in the store.  
 
