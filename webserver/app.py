@@ -8,12 +8,16 @@ from time import strftime
 from datetime import datetime
 from sqlite3 import Error
 
-
+# CARSON'S BOOKSTORE
+# By Carson Forsyth
+# For CMPSC 431W with Dong Xie, SP2021 @ The Pennsylvania State University
+# A Flask Webapp running a SQLite3 DB to serve Jinja templates using Bootstrap.
+# To create a simple bookstore website prototype for Project Phase 2.
 
 DB_Pathname = r".\..\SQLite_bookstore.db"
-# create a connection to the SQLite Database
-# @param {Pathname} db_file: The filename to connect to or create.
-# @return {SQLite3 Connection Object} conn: the database connection.
+
+# Create a connection to the SQLite Database.
+# Return conn: the SQLite3 database connection object.
 def create_connection():
     conn = None
     try:
@@ -152,19 +156,32 @@ def viewHighlyRatedBooks():
 @app.route("/view-user")
 def viewUser():
     if not request.args.get('userID'):
-        flash("No user selected.")
-        return redirect(request.referrer)
+        if not request.form.get('userID'):
+            flash("No user selected.")
+            return redirect(request.referrer)
+        else:
+            userID = request.form.get('userID')
+    else:
+        userID = request.args.get('userID')
     conn = create_connection()
     conn.row_factory = db.Row
     cur = conn.cursor()
-    cur.execute("SELECT * FROM Users WHERE id=(?);", (request.args['userID'],))
-    row = cur.fetchone()
-    if not row:
+    cur.execute("SELECT Users.id, username, first_name, last_name FROM Users LEFT JOIN Customers ON Users.id=Customers.user_id WHERE id=(?);", (userID,))
+    user = cur.fetchone()
+    if not user:
         flash("No user found.")
         return redirect(request.referrer)
-    cur.execute("SELECT * FROM Comments INNER JOIN Customers ON Comments.user_id=Customers.user_id WHERE Comments.user_id=(?);", (request.args['userID'],))
-    comments = cur.fetchall()
-    return render_template("view_user.html", user=row, comment_list=comments)
+    cur.execute("SELECT COUNT(*) AS num_trusts FROM Trusts WHERE user_id=(?) AND value=1;", (userID,))
+    row = cur.fetchone()
+    numTrusts = None
+    if row:
+        numTrusts = row['num_trusts']
+    comments = None
+    if request.args.get('numRows'):
+        numRows = int(request.args.get('numRows'))
+        cur.execute("SELECT * FROM Comments INNER JOIN Customers ON Comments.user_id=Customers.user_id LEFT JOIN CommentRating ON Comments.id=CommentRating.comment_id WHERE Comments.user_id=(?) ORDER BY avg_rating;", (userID,))
+        comments = cur.fetchmany(numRows)
+    return render_template("view_user.html", user=user, comment_list=comments, num_trusts=numTrusts)
 
 # Allow a user to view detailed information about a given book.
 @app.route("/view-book")
@@ -199,6 +216,23 @@ def viewBook():
         comments = cur.fetchmany(int(request.args.get('numRows')))
     return render_template("view_book.html", book=book, comment_list = comments, author_list = authors, rating=rating)
 
+# Allow users to view recommended books
+@app.route('/my-recommended-books', methods = ['GET'])
+def myRecommendedBooks():
+    if not session.get('user_id'):
+        flash("You must be logged in!")
+        return redirect(url_for('login'))
+    else:
+        userID = session.get('user_id')
+        conn = create_connection()
+        conn.row_factory = db.Row
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM Books INNER JOIN (SELECT book_id FROM Orders INNER JOIN OrderItems ON Orders.id=OrderItems.order_id WHERE placed_by IN (SELECT placed_by FROM Orders INNER JOIN OrderItems ON Orders.id=OrderItems.order_id WHERE OrderItems.book_id IN (SELECT book_id FROM Orders INNER JOIN OrderItems ON Orders.id=OrderItems.order_id WHERE placed_by=(?))) AND placed_by!=(?) AND book_id NOT IN (SELECT book_id FROM Orders INNER JOIN OrderItems ON Orders.id=OrderItems.order_id WHERE placed_by=(?))) ON book_id=Books.id;", (userID,userID,userID))
+        books1 = cur.fetchmany(15)
+        cur.execute("SELECT * FROM Books INNER JOIN (SELECT book_id FROM AuthorWrites WHERE author_id IN (SELECT author_id FROM AuthorWrites INNER JOIN OrderItems ON AuthorWrites.book_id=OrderItems.book_id INNER JOIN Orders ON Orders.id=OrderItems.order_id WHERE Orders.placed_by=(?)) AND AuthorWrites.book_id NOT IN (SELECT book_id FROM Orders INNER JOIN OrderItems ON Orders.id=OrderItems.order_id WHERE Orders.placed_by=(?))) ON Books.id=book_id;", (userID, userID))
+        books2 = cur.fetchmany(15)
+        return render_template("my_recommended_books.html", book_list1 = books1, book_list2 = books2)
+
 # Allow a user to view detailed author information, including books they have written, books by 1-degree authors and books by 2-degree authors.
 @app.route("/view-author")
 def viewAuthor():
@@ -212,11 +246,11 @@ def viewAuthor():
     cur.execute("SELECT * FROM Authors WHERE id = (?)", (authorID,))
     row = cur.fetchone()
     cur.execute("SELECT * FROM AuthorWrites INNER JOIN Books ON AuthorWrites.book_id = Books.id WHERE author_id = (?);", (authorID,))
-    booksByAuthor = cur.fetchall()
-    cur.execute("SELECT * FROM Books INNER JOIN AuthorWrites ON Books.id=AuthorWrites.book_id INNER JOIN OneDegreeAuthors ON AuthorWrites.author_id=OneDegreeAuthors.author_id WHERE OneDegreeAuthors.co_author_id=(?) AND Books.id NOT IN (SELECT book_id FROM AuthorWrites WHERE author_id=(?));", (authorID,authorID))
-    booksBy1DegreeAuthor = cur.fetchall()
-    cur.execute("SELECT * FROM Books INNER JOIN AuthorWrites ON Books.id=AuthorWrites.book_id INNER JOIN TwoDegreeAuthors ON AuthorWrites.author_id=TwoDegreeAuthors.author_id WHERE TwoDegreeAuthors.co_author_id=(?) AND TwoDegreeAuthors.author_id NOT IN (SELECT co_author_id FROM OneDegreeAuthors WHERE OneDegreeAuthors.author_id=TwoDegreeAuthors.co_author_id) AND Books.id NOT IN (SELECT book_id FROM AuthorWrites WHERE author_id=(?));", (authorID,authorID))
-    booksBy2DegreeAuthor = cur.fetchall()
+    booksByAuthor = cur.fetchmany(20)
+    cur.execute("SELECT * FROM Books INNER JOIN AuthorWrites ON Books.id=AuthorWrites.book_id INNER JOIN OneDegreeAuthors ON AuthorWrites.author_id=OneDegreeAuthors.co_author_id WHERE OneDegreeAuthors.author_id=(?);", (authorID,))
+    booksBy1DegreeAuthor = cur.fetchmany(20)
+    cur.execute("SELECT * FROM Books INNER JOIN AuthorWrites ON Books.id=AuthorWrites.book_id INNER JOIN TwoDegreeAuthors ON AuthorWrites.author_id=TwoDegreeAuthors.co_author_id WHERE TwoDegreeAuthors.author_id=(?) AND AuthorWrites.book_id NOT IN (SELECT book_id FROM AuthorWrites INNER JOIN OneDegreeAuthors ON AuthorWrites.author_id=OneDegreeAuthors.co_author_id WHERE OneDegreeAuthors.author_id=(?));", (authorID,authorID))
+    booksBy2DegreeAuthor = cur.fetchmany(20)
     return render_template("view_author.html", author=row, book_list_author=booksByAuthor, book_list_1degree=booksBy1DegreeAuthor, book_list_2degree=booksBy2DegreeAuthor)
 
 # Allow users to manage and view the items that they currently have in cart before ordering.
@@ -239,13 +273,20 @@ def cart():
                 cur.execute("SELECT * FROM Customers WHERE user_id = (?)", (userID,))
                 if not cur.fetchone():
                     flash("Customer not registered.")
-                    return redirect(url_for('updateCustomer'))
+                    return redirect(url_for('myInformation'))
                 else:
                     cur.execute("SELECT COUNT(*) as cnt FROM Orders")
                     row = cur.fetchone()
                     orderID = int(row['cnt']) + 1
                     cur.execute("SELECT * FROM Cart WHERE user_id = (?)", (userID,))
                     rows = cur.fetchall()
+                    for row in rows:
+                        bookID = row['book_id']
+                        cur.execute("SELECT * FROM Books WHERE id=(?);", (bookID,))
+                        book = cur.fetchone()
+                        if book['stock'] < row['quantity']:
+                            flash(book['title'] + " does not have enough in stock!")
+                            return redirect(url_for('cart')) 
                     cur.execute("SELECT COUNT(*) as cnt FROM OrderItems")
                     row = cur.fetchone()
                     itemID = int(row['cnt']) + 1
@@ -605,7 +646,7 @@ def updateCustomer():
             return redirect(url_for('login'))
         if not request.form.get('phone') or not request.form.get('first_name') or not request.form.get('last_name'):
             flash("All fields required.")
-            return redirect(url_for('updateCustomer'))
+            return redirect(url_for('myInformation'))
         cur.execute("SELECT * FROM Customers WHERE user_id = (?)", (userID,))
         row = cur.fetchone()
         if row is None:

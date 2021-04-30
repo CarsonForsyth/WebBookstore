@@ -1,0 +1,18 @@
+{% extends "navigation.html" %}
+{% block content %}
+<body>
+    <h1>Your Recommended Books</h1>
+    <h2>15 By Authors of Books you Ordered</h2>
+    <div class="row">
+      {% for book in book_list2 %}
+        {% include "book_card.html" %}
+      {% endfor %}
+    </div>
+    <h2>15 Books Ordered by Users that Ordered the same Books as you</h2>
+    <div class="row">
+      {% for book in book_list1 %}
+        {% include "book_card.html" %}
+      {% endfor %}
+    </div>
+</body>
+{% endblock %}

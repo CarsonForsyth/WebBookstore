@@ -113,15 +113,6 @@ def generate_all_tables(conn):
     """
     create_table(conn, sql_create_bookHasSubject_table)
 
-    sql_create_images_table = """ CREATE TABLE IF NOT EXISTS Images
-    (
-        image_id INTEGER, 
-        book_id INTEGER,
-        image BLOB NOT NULL,
-        FOREIGN KEY (book_id) REFERENCES Books(id) ON DELETE CASCADE
-    );
-    """
-    create_table(conn, sql_create_images_table)
     sql_create_sales_table = """ CREATE TABLE IF NOT EXISTS Sales
     (
         id INTEGER PRIMARY KEY,
@@ -229,12 +220,15 @@ def generate_all_tables(conn):
     """
     create_table(conn, sql_create_commentRating_view)
 
-    sql_create_addressOrderStats_view = """ CREATE VIEW IF NOT EXISTS AddressOrderStats AS 
-        SELECT city, region, country, order_quarter, SUM(total) AS order_total FROM
-        (
-            SELECT order_id, ships_to AS address_id, order_quarter, total FROM Orders
-        )
-        INNER JOIN Addresses ON Addresses.id = address_id GROUP BY address_id
+    sql_create_addressOrderStats_view = """ CREATE VIEW AddressOrderStats AS 
+            SELECT city, region, country, order_quarter, year, SUM(total) AS total FROM
+            (
+                SELECT order_id, ships_to AS address_id, order_quarter, year, quantity*SUM(price) AS total 
+                FROM Orders INNER JOIN OrderItems ON Orders.id=OrderItems.order_id
+				INNER JOIN Books ON Books.id=OrderItems.book_id
+                GROUP BY OrderItems.order_id
+            )
+            INNER JOIN Addresses ON Addresses.id = address_id GROUP BY city;
     """
     create_table(conn, sql_create_addressOrderStats_view)
 
@@ -244,12 +238,12 @@ def generate_all_tables(conn):
     create_table(conn, sql_create_bookRatings_view)
 
     sql_create_oneDegreeAuthors_view = """ CREATE VIEW IF NOT EXISTS OneDegreeAuthors AS
-        SELECT A.author_id, B.author_id AS co_author_id FROM AuthorWrites AS A INNER JOIN AuthorWrites AS B ON A.book_id=B.book_id and A.author_id!=B.author_id GROUP BY A.author_id, B.author_id ORDER BY A.author_id;
+        SELECT A.author_id, B.author_id AS co_author_id FROM AuthorWrites AS A INNER JOIN AuthorWrites AS B ON A.book_id=B.book_id and A.author_id!=B.author_id GROUP BY A.author_id, B.author_id;
     """
     create_table(conn, sql_create_oneDegreeAuthors_view)
     
     sql_create_twoDegreeAuthors_view = """ CREATE VIEW IF NOT EXISTS TwoDegreeAuthors AS
-        SELECT A.author_id, B.co_author_id FROM OneDegreeAuthors AS A INNER JOIN OneDegreeAuthors AS B ON A.co_author_id=B.author_id WHERE A.author_id!=B.co_author_id AND B.co_author_id NOT IN (SELECT co_author_id FROM OneDegreeAuthors AS C WHERE C.author_id=A.author_id);
+        SELECT DISTINCT A.author_id, C.co_author_id FROM OneDegreeAuthors AS A INNER JOIN OneDegreeAuthors AS B on A.co_author_id=B.author_id INNER JOIN OneDegreeAuthors AS C ON B.co_author_id=C.author_id WHERE A.author_id!=B.co_author_id AND A.author_id!=C.co_author_id AND C.co_author_id AND C.co_author_id NOT IN (SELECT D.co_author_id FROM OneDegreeAuthors AS D WHERE D.author_id=A.author_id);
     """
     create_table(conn, sql_create_twoDegreeAuthors_view)
 

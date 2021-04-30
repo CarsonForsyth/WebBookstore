@@ -17,19 +17,25 @@
                 Overall rating is <b>{{"%.1f"|format(rating)}}</b>
             </div>
             <div class="col-sm-4">
-                <p>{{book['stock']}} in stock at ${{book['price']}}
+                <p>
+                {% if book['stock'] > 0 %}
+                In stock at ${{book['price']}}
+                {% else %}
+                Out of Stock, usually ${{book['price']}}
+                {% endif %}
                 {% if book['discount'] %}
                      | Book is on sale! <br>Discount is {{100*book['discount']}}% off;
                     adjusted price is ${{"%.2f"|format(book['realPrice'])}}
                 {% endif %}
             </p>
             </div>
+            
             <div class="col-sm-2">
                 <form action="/update-item" method="POST">
                     <input type="hidden" name="bookID" value="{{book['id']}}">
                     <input type="hidden" name="quantity" value="1">
                     <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-dark">Order Now</button>
+                        <button type="submit" class="btn btn-primary btn-dark" {% if book['stock'] <= 0 %}disabled{% endif %}>Order Now</button>
                     </div>
                 </form>
             </div>

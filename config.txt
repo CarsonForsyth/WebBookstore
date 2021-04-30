@@ -1,2 +1,0 @@
-
-DB_Pathname = r".\..\SQLite_bookstore.db"

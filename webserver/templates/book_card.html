@@ -8,7 +8,7 @@
             <p class="card-text">{% if book['stock'] > 0 %} In stock at ${{book["price"]}} {% else %} Out of stock.{% endif %}</p>
             <p class="card-text">{{book["num_pages"]}} pages | Language code {{book["language"]}}</p>
             <div class="text-right">
-                <a href="/view-book?bookID={{book['id']}}" class="btn btn-primary">View book...</a>
+                <a href="/view-book?bookID={{book['id']}}" class="btn btn-outline-dark">View Book</a>
             </div>
         </div>
     </div>
